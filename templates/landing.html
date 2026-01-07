@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub Select Role</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  </head>
+
+  <body>
+    <h1>Select your role</h1>
+
+    <p>Choose one to continue:</p>
+
+    <ul>
+      <li><a href="/login?role=student">Student</a></li>
+      <li><a href="/login?role=teacher">Teacher</a></li>
+      <li><a href="/login?role=head">Head Teacher</a></li>
+      <li><a href="/login?role=admin">Admin</a></li>
+    </ul>
+  </body>
+</html>

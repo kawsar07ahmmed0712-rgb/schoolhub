@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  </head>
+
+  <body>
+    <h1>{{ role|capitalize }} Dashboard</h1>
+    {% if phone %}
+      <p>Welcome, {{ phone }} ✅</p>
+    {% endif %}
+
+
+    <p>This is a placeholder dashboard page.</p>
+
+<h2>Menu</h2>
+
+    <ul>
+    {% for slug, label in pages %}
+        <li>
+        <a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a>
+        </li>
+    {% endfor %}
+    </ul>
+
+    <hr />
+
+    <ul>
+    <li><a href="/">Go to Landing</a></li>
+    <li><a href="/login?role={{ role }}">Go to Login</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+
+  </body>
+</html>

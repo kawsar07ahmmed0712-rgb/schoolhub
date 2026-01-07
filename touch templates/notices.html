@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Notices</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>Notices</h1>
+    <p>Role: {{ role }}</p>
+
+    {% if phone %}
+      <p>Logged in as: {{ phone }}</p>
+    {% endif %}
+
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    {% if can_post %}
+      <h2>Add a notice</h2>
+
+      <form method="post" action="{{ url_for('notices_post', role=role) }}">
+        <label for="title">Title</label><br />
+        <input id="title" name="title" type="text" value="{{ title or '' }}" /><br /><br />
+
+        <label for="body">Body</label><br />
+        <textarea id="body" name="body" rows="5" cols="40">{{ body or '' }}</textarea><br /><br />
+
+        <button type="submit">Publish</button>
+      </form>
+
+      <hr />
+    {% endif %}
+
+    <h2>All notices</h2>
+
+    {% if notices|length == 0 %}
+      <p>No notices yet.</p>
+    {% else %}
+      <ul>
+        {% for n in notices %}
+          <li>
+            <strong>{{ n.title }}</strong>
+            <div>{{ n.body }}</div>
+            <small>By {{ n.by_role }} ({{ n.by_phone }}) at {{ n.created_at }}</small>
+          </li>
+          <br />
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <p><a href="{{ url_for('dashboard', role=role) }}">← Back to Dashboard</a></p>
+  </body>
+</html>

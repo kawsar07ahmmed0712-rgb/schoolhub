@@ -1,0 +1,24 @@
+body {
+  font-family: Arial, sans-serif;
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 16px;
+  line-height: 1.5;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+input, button {
+  font-size: 16px;
+  padding: 10px;
+}
+
+button {
+  cursor: pointer;
+}
