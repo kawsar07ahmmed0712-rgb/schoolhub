@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request , redirect, url_for , session
+from datetime import datetime 
+
 
 app = Flask(__name__)
 app.secret_key = "dev-only-secret-key-change-later"
@@ -39,6 +41,7 @@ ROLE_PAGES = {
     ],
 }
 NOTICES = []
+NEXT_NOTICE_ID = 1
 
 
 
@@ -50,6 +53,10 @@ def normalize_role(role: str) -> str:
 @app.get("/")
 def home():
     return render_template("landing.html")
+
+
+
+
 
 # LOGIN
 @app.get("/login")
@@ -80,6 +87,12 @@ def login_post():
 
     return render_template("login.html", role=role, phone=phone, message="Invalid credentials ❌ (demo).")
 
+
+
+
+
+
+
 # DASHBOARD
 @app.get("/dashboard/<role>")
 def dashboard(role):
@@ -103,7 +116,88 @@ def dashboard_page(role, page):
     page_title=pages_dict[page],
     phone=session.get("phone"),
 )
-@app.get()
+
+
+
+# NOTICES 
+
+@app.get("/dashboard/<role>/notices")
+def notices(role):
+    role = normalize_role(role)
+
+    if session.get("role") != role:
+        return redirect(url_for("login", role=role))
+
+    can_post = role in {"teacher", "head", "admin"}
+    notices_latest_first = list(reversed(NOTICES))
+    return render_template(
+    "notices.html",
+    role=role,
+    phone=session.get("phone"),
+    can_post=can_post,
+    notices=notices_latest_first,
+)
+@app.post("/dashboard/<role>/notices")
+def notices_post(role):
+    role = normalize_role(role)
+
+    if session.get("role") != role:
+        return redirect(url_for("login", role=role))
+
+    if role not in {"teacher", "head", "admin"}:
+        return redirect(url_for("notices", role=role))
+
+    title = request.form.get("title", "").strip()
+    body = request.form.get("body", "").strip()
+
+    if title == "" or body == "":
+        return render_template(
+            "notices.html",
+            role=role,
+            phone=session.get("phone"),
+            can_post=True,
+            notices=list(reversed(NOTICES)),
+            message="Title and body are required.",
+            title=title,
+            body=body,
+        )
+    global NEXT_NOTICE_ID
+
+    NOTICES.append(
+        {
+            "id": NEXT_NOTICE_ID,
+            "title": title,
+            "body": body,
+            "by_role": role,
+            "by_phone": session.get("phone"),
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        }
+    )
+    NEXT_NOTICE_ID += 1
+
+
+    return redirect(url_for("notices", role=role))
+
+
+@app.post("/dashboard/<role>/notices/<int:notice_id>/delete")
+def notice_delete(role , notice_id):
+    role = normalize_role(role)
+
+    if session.get("rle") != role:
+        return redirect(url_for("login" , role = role))
+    
+    if role not in {"teacher" , "head" , "admin"}:
+        return redirect(url_for("notices" , role))
+    
+    for i , n in enumerate(NOTICES):
+        if n["id"] == notice_id:
+            NOTICES.pop(i)
+            break
+    
+    return redirect(url_for("notices" , role = role))
+
+
+
 @app.get("/logout")
 def logout():
     session.clear()

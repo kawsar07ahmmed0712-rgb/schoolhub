@@ -22,7 +22,11 @@
     <ul>
     {% for slug, label in pages %}
         <li>
-        <a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a>
+        {% if slug == 'notices' %}
+          <a href="{{ url_for('notices', role=role) }}">{{ label }}</a>
+        {% else %}
+          <a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a>
+        {% endif %}
         </li>
     {% endfor %}
     </ul>

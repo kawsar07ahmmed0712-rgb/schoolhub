@@ -46,6 +46,11 @@
             <strong>{{ n.title }}</strong>
             <div>{{ n.body }}</div>
             <small>By {{ n.by_role }} ({{ n.by_phone }}) at {{ n.created_at }}</small>
+            {% if can_post %}
+              <form method="post" action="{{ url_for('notice_delete', role=role, notice_id=n.id) }}">
+                <button type="submit">Delete</button>
+              </form>
+            {% endif %}
           </li>
           <br />
         {% endfor %}
