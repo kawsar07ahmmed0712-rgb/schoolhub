@@ -1,7 +1,6 @@
 from db import connect_server, get_db_config
 
 
-
 def main():
     cfg = get_db_config()
     db_name = cfg["database"]

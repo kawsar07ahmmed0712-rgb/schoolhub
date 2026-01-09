@@ -12,6 +12,34 @@
     <h1>{{ role|capitalize }} Dashboard</h1>
     {% if phone %}
       <p>Welcome, {{ phone }} ✅</p>
+        {% if profile %}
+          <hr />
+          <h2>Profile Summary</h2>
+
+          {% if role == 'student' %}
+            <p><strong>Name:</strong> {{ profile.name }}</p>
+            {% if profile.class_no %}
+              <p><strong>Class:</strong> {{ profile.class_no }} | <strong>Section:</strong> {{ profile.section }} | <strong>Roll:</strong> {{ profile.roll }}</p>
+            {% else %}
+              <p><em>Class info not found in class tables yet.</em></p>
+            {% endif %}
+          {% elif role == 'teacher' %}
+            <p><strong>Name:</strong> {{ profile.name }}</p>
+            <p><strong>Teacher ID:</strong> {{ profile.teacher_code }}</p>
+            {% if profile.class_no %}
+              <p><strong>Class Teacher For:</strong> Class {{ profile.class_no }} - Section {{ profile.section }}</p>
+            {% else %}
+              <p><em>Class teacher assignment not found yet.</em></p>
+            {% endif %}
+
+          {% elif role == 'admin' %}
+            <p><strong>Name:</strong> {{ profile.name }}</p>
+            <p><strong>Secret ID:</strong> {{ profile.secret_id }}</p>
+          {% elif role == 'head' %}
+            <p><strong>Name:</strong> {{ profile.name }}</p>
+            <p><strong>Auth ID:</strong> {{ profile.authentication_id }}</p>
+          {% endif %}
+        {% endif %}
     {% endif %}
 
 

@@ -1,9 +1,117 @@
 from flask import Flask, render_template, request , redirect, url_for , session
 from datetime import datetime 
+from werkzeug.security import check_password_hash 
+from db import connect_db
+
+
 
 
 app = Flask(__name__)
 app.secret_key = "dev-only-secret-key-change-later"
+
+
+def fetch_user_by_phone(phone: str):
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT id, phone, password_hash, role, is_active FROM users WHERE phone=%s",
+        (phone,),
+    )   
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row
+
+
+
+def fetch_role_profile(user_id: int, role: str):
+    """
+    Returns a dict of role-specific profile info.
+    For students: also tries to find class/section/roll from class tables.
+    """
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        if role == "student":
+            cursor.execute("SELECT id, name FROM students WHERE user_id=%s", (user_id,))
+            student = cursor.fetchone()
+            if not student:
+                return None
+
+            student_id = student["id"]
+
+            # Find which class table contains this student_id
+            section_map = {"A": "01", "B": "02"}
+
+            found = None
+            for class_no in range(1, 11):
+                for section_letter in ("A", "B"):
+                    table = f"class_{class_no:02d}_section_{section_map[section_letter]}"
+                    cursor.execute(f"SELECT roll FROM `{table}` WHERE student_id=%s LIMIT 1", (student_id,))
+                    row = cursor.fetchone()
+                    if row:
+                        found = {
+                            "name": student["name"],
+                            "class_no": class_no,
+                            "section": section_letter,
+                            "roll": row["roll"],
+                        }
+                        break
+                if found:
+                    break
+
+            # If not found in any class table, still return basic info
+            if not found:
+                return {"name": student["name"]}
+
+            return found
+
+        if role == "teacher":
+            cursor.execute(
+                """
+                SELECT
+                t.teacher_code,
+                t.name,
+                a.class_no,
+                a.section
+                FROM teachers t
+                LEFT JOIN class_teacher_assignments a
+                ON a.teacher_id = t.id
+                WHERE t.user_id=%s
+                ORDER BY a.academic_year DESC, a.id DESC
+                LIMIT 1
+                """,
+                (user_id,),
+            )
+            t = cursor.fetchone()
+            return t
+
+
+        if role == "admin":
+            cursor.execute("SELECT secret_id, name FROM admins WHERE user_id=%s", (user_id,))
+            a = cursor.fetchone()
+            return a
+
+        if role == "head":
+            cursor.execute("SELECT authentication_id, name FROM headmasters WHERE user_id=%s", (user_id,))
+            h = cursor.fetchone()
+            return h
+
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+
+
+
+
+
+
+
 
 ALLOWED_ROLES = {"student", "teacher", "head", "admin"}
 
@@ -79,13 +187,37 @@ def login_post():
     if phone == "" or password == "":
         return render_template("login.html", role=role, phone=phone, message="Phone and password are required.")
 
-    if phone == "01700000000" and password == "1234":
-        session["role"] = role
-        session["phone"] = phone
-        session.pop("login_role", None)
-        return redirect(url_for("dashboard", role=role))
+    user = fetch_user_by_phone(phone)
 
-    return render_template("login.html", role=role, phone=phone, message="Invalid credentials ❌ (demo).")
+    if not user or user["is_active"] != 1:
+        return render_template(
+            "login.html",
+            role=role,
+            phone=phone,
+            message="User not found or inactive.",
+        )
+    if user["role"] != role:
+        return render_template(
+            "login.html",
+            role=role,
+            phone=phone,
+            message=f"Wrong role selected. This phone belongs to: {user['role']}",
+        )
+    
+    if not check_password_hash(user["password_hash"], password):
+        return render_template(
+            "login.html",
+            role=role,
+            phone=phone,
+            message="Invalid password.",
+        )
+    session["role"] = role
+    session["phone"] = phone
+    session["user_id"] = user["id"]
+    session.pop("login_role", None)
+
+    return redirect(url_for("dashboard", role=role))
+
 
 
 
@@ -97,10 +229,21 @@ def login_post():
 @app.get("/dashboard/<role>")
 def dashboard(role):
     role = normalize_role(role)
+
     if session.get("role") != role:
-        return redirect(url_for("login" , role=role))
-    pages = ROLE_PAGES[role]  
-    return render_template("dashboard.html", role=role, pages=pages, phone=session.get("phone"))
+        return redirect(url_for("login", role=role))
+
+    pages = ROLE_PAGES[role]
+    profile = fetch_role_profile(session.get("user_id"), role)
+
+    return render_template(
+        "dashboard.html",
+        role=role,
+        pages=pages,
+        phone=session.get("phone"),
+        profile=profile,
+    )
+
 # DASHBOARD PAGE
 @app.get("/dashboard/<role>/<page>")
 def dashboard_page(role, page):
