@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Daily Class Update</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>Daily Class Update</h1>
+
+    <p><strong>Date:</strong> {{ today }}</p>
+    <p><strong>Class:</strong> {{ class_no }} | <strong>Section:</strong> {{ section }}</p>
+
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    <hr />
+
+    <h2>Today’s Periods (1–6)</h2>
+
+    <table border="1" cellpadding="8">
+      <thead>
+        <tr>
+          <th>Period</th>
+          <th>Topic</th>
+          <th>Homework</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in periods %}
+          <tr>
+            <td>{{ p.period_no }}</td>
+            <td>{{ p.topic }}</td>
+            <td>{{ p.homework }}</td>
+            <td>{{ p.notes }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p><a href="{{ url_for('dashboard', role='teacher') }}">← Back to Dashboard</a></p>
+  </body>
+</html>

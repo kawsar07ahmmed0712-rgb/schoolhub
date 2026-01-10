@@ -48,16 +48,30 @@
 <h2>Menu</h2>
 
     <ul>
-    {% for slug, label in pages %}
+      {% for slug, label in pages %}
         <li>
-        {% if slug == 'notices' %}
-          <a href="{{ url_for('notices', role=role) }}">{{ label }}</a>
-        {% else %}
-          <a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a>
-        {% endif %}
+          {% if slug == 'notices' %}
+            <a href="{{ url_for('notices', role=role) }}">{{ label }}</a>
+          {% elif role == 'teacher' and slug == 'students' %}
+            <a href="{{ url_for('teacher_students', role=role) }}">{{ label }}</a>
+          {% elif role == 'teacher' and slug == 'attendance' %}
+            <a href="{{ url_for('teacher_attendance', role=role) }}">{{ label }}</a>
+          {% elif role == 'student' and slug == 'attendance' %}
+            <a href="{{ url_for('student_attendance') }}">{{ label }}</a>
+          {% elif role == 'teacher' and slug == 'daily_class' %}
+            <a href="{{ url_for('teacher_daily_class') }}">{{ label }}</a>
+          {% elif role == 'teacher' and slug == 'today_schedule' %}
+            <a href="{{ url_for('teacher_today_schedule') }}">{{ label }}</a>
+          {% elif role == 'head' and slug == 'today_overview' %}
+            <a href="{{ url_for('head_today_overview') }}">{{ label }}</a>
+          {% else %}
+            <a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a>
+          {% endif %}
         </li>
-    {% endfor %}
+      {% endfor %}
     </ul>
+
+
 
     <hr />
 

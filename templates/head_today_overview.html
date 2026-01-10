@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Today's Teaching Overview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>Today's Teaching Overview</h1>
+
+    <p><strong>Date:</strong> {{ today }} | <strong>Weekday:</strong> {{ weekday }}</p>
+    <hr />
+    <p>
+      <strong>Quick:</strong>
+      <a href="{{ url_for('head_today_overview',
+                          teacher_id=selected_teacher_id,
+                          class_no=selected_class_no,
+                          section=selected_section,
+                          status='pending') }}">Pending</a>
+      |
+      <a href="{{ url_for('head_today_overview',
+                          teacher_id=selected_teacher_id,
+                          class_no=selected_class_no,
+                          section=selected_section,
+                          status='all') }}">All</a>
+      |
+      <a href="{{ url_for('head_today_overview',
+                          teacher_id=selected_teacher_id,
+                          class_no=selected_class_no,
+                          section=selected_section,
+                          status='done') }}">Done</a>
+    </p>
+
+
+    <form method="get" action="{{ url_for('head_today_overview') }}">
+      <label for="teacher_id">Teacher:</label>
+      <select id="teacher_id" name="teacher_id">
+        <option value="">All</option>
+        {% for tid, tlabel in teacher_options.items() %}
+          <option value="{{ tid }}" {% if selected_teacher_id == tid|string %}selected{% endif %}>
+            {{ tlabel }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <label for="class_no">Class:</label>
+      <select id="class_no" name="class_no">
+        <option value="">All</option>
+        {% for key, label in class_options.items() %}
+          <option value="{{ key[0] }}" {% if selected_class_no == key[0]|string %}selected{% endif %}>
+            {{ label }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <label for="section">Section:</label>
+      <select id="section" name="section">
+        <option value="">All</option>
+        <option value="A" {% if selected_section == "A" %}selected{% endif %}>A</option>
+        <option value="B" {% if selected_section == "B" %}selected{% endif %}>B</option>
+      </select>
+
+      <label for="status">Status:</label>
+      <select id="status" name="status">
+        <option value="all" {% if selected_status == "all" %}selected{% endif %}>All</option>
+        <option value="done" {% if selected_status == "done" %}selected{% endif %}>Done</option>
+        <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Pending</option>
+      </select>
+
+      <button type="submit">Apply</button>
+    </form>
+
+    <hr />
+
+    <p>
+      <strong>Total:</strong> {{ summary.total }}
+      | <strong>Done:</strong> {{ summary.done }}
+      | <strong>Pending:</strong> {{ summary.pending }}
+      | <strong>Done %:</strong> {{ summary.percent }}%
+    </p>
+
+    <h2>By Teacher</h2>
+
+    <table border="1" cellpadding="8">
+      <thead>
+        <tr>
+          <th>Teacher</th>
+          <th>Phone</th>
+          <th>Total</th>
+          <th>Done</th>
+          <th>Pending</th>
+          <th>Done %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in teacher_summary %}
+          <tr>
+            <td>{{ t.teacher_name }}</td>
+            <td>{{ t.teacher_phone }}</td>
+            <td>{{ t.total }}</td>
+            <td>{{ t.done }}</td>
+            <td>{{ t.pending }}</td>
+            <td>{{ t.percent }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <hr />
+
+
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    <table border="1" cellpadding="8">
+      <thead>
+        <tr>
+          <th>Teacher</th>
+          <th>Phone</th>
+          <th>Period</th>
+          <th>Class</th>
+          <th>Section</th>
+          <th>Status</th>
+          <th>Topic</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.teacher_name }}</td>
+            <td>{{ r.teacher_phone }}</td>
+            <td>{{ r.period_no }}</td>
+            <td>{{ r.class_no }}</td>
+            <td>{{ r.section }}</td>
+            <td>{{ r.status }}</td>
+            <td>{{ r.topic }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p><a href="{{ url_for('dashboard', role='head') }}">← Back to Dashboard</a></p>
+  </body>
+</html>

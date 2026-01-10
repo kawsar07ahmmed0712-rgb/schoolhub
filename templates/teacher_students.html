@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Student List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>Student List</h1>
+
+    <p><strong>Class:</strong> {{ class_no }} | <strong>Section:</strong> {{ section }}</p>
+
+    <form method="get" action="{{ url_for('teacher_students', role=role) }}">
+      <input name="q" type="text" placeholder="Search by name or phone" value="{{ q or '' }}" />
+      <button type="submit">Search</button>
+    </form>
+
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    {% if students %}
+      <table border="1" cellpadding="8">
+        <thead>
+          <tr>
+            <th>Roll</th>
+            <th>Name</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+            <tr>
+              <td>{{ s.roll }}</td>
+              <td>{{ s.name }}</td>
+              <td>{{ s.phone }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <p><a href="{{ url_for('dashboard', role=role) }}">← Back to Dashboard</a></p>
+  </body>
+</html>
+
+    
+    

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - My Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>My Attendance</h1>
+
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    <p><strong>Name:</strong> {{ student_name or '-' }}</p>
+
+    <form method="get" action="{{ url_for('student_attendance') }}">
+      <label for="from">From</label>
+      <input id="from" name="from" type="date" value="{{ from_date or '' }}" />
+
+      <label for="to">To</label>
+      <input id="to" name="to" type="date" value="{{ to_date or '' }}" />
+
+      <button type="submit">Filter</button>
+    </form>
+
+    <hr />
+
+    <p>
+      <strong>Total:</strong> {{ summary.total }} |
+      <strong>Present:</strong> {{ summary.present }} |
+      <strong>Absent:</strong> {{ summary.absent }} |
+      <strong>Present %:</strong> {{ summary.percent }}%
+    </p>
+
+    {% if rows %}
+      <table border="1" cellpadding="8">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.attendance_date }}</td>
+              <td>{{ r.status }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No attendance records found.</p>
+    {% endif %}
+
+    <p><a href="{{ url_for('dashboard', role='student') }}">← Back to Dashboard</a></p>
+  </body>
+</html>

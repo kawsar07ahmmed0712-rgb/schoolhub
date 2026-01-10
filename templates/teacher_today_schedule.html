@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Today's Schedule</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>Today's Schedule</h1>
+
+    <p>
+      <strong>Date:</strong> {{ today }}
+      | <strong>Weekday:</strong> {{ weekday }}
+    </p>
+
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    <hr />
+    <h2>Periods (1–6)</h2>
+
+    {% for p in periods %}
+      <section style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+        <h3>Period {{ p.period_no }}</h3>
+
+        <p>
+          <strong>Class:</strong> {{ p.class_no }}
+          | <strong>Section:</strong> {{ p.section }}
+        </p>
+
+        {% if p.class_no == '-' %}
+          <p><em>No class assigned for this period.</em></p>
+        {% else %}
+          <form method="post" action="{{ url_for('teacher_today_schedule') }}">
+            <input type="hidden" name="period_no" value="{{ p.period_no }}" />
+
+            <label>
+              <input
+                type="checkbox"
+                name="is_done"
+                {% if p.is_done == 1 %}checked{% endif %}
+              />
+              Done
+            </label>
+
+            <br /><br />
+
+            <label for="topic-{{ p.period_no }}">Topic</label><br />
+            <input
+              id="topic-{{ p.period_no }}"
+              name="topic"
+              type="text"
+              value="{{ p.topic }}"
+            />
+
+            <br /><br />
+
+            <label for="hw-{{ p.period_no }}">Homework</label><br />
+            <textarea
+              id="hw-{{ p.period_no }}"
+              name="homework"
+              rows="3"
+              cols="45"
+            >{{ p.homework }}</textarea>
+
+            <br /><br />
+
+            <label for="notes-{{ p.period_no }}">Notes</label><br />
+            <textarea
+              id="notes-{{ p.period_no }}"
+              name="notes"
+              rows="3"
+              cols="45"
+            >{{ p.notes }}</textarea>
+
+            <br /><br />
+
+            <button type="submit">Save Period {{ p.period_no }}</button>
+          </form>
+        {% endif %}
+      </section>
+    {% endfor %}
+
+    <p><a href="{{ url_for('dashboard', role='teacher') }}">← Back to Dashboard</a></p>
+  </body>
+</html>
