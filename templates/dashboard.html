@@ -64,6 +64,10 @@
             <a href="{{ url_for('teacher_today_schedule') }}">{{ label }}</a>
           {% elif role == 'head' and slug == 'today_overview' %}
             <a href="{{ url_for('head_today_overview') }}">{{ label }}</a>
+          {% elif role == 'teacher' and slug == 'weekly_schedule' %}
+            <a href="{{ url_for('teacher_weekly_schedule') }}">{{ label }}</a>
+          {% elif role == 'admin' and slug == 'schedule_upload' %}
+            <a href="{{ url_for('admin_schedule_upload') }}">{{ label }}</a>
           {% else %}
             <a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a>
           {% endif %}

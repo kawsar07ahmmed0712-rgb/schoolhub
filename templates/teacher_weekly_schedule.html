@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Weekly Schedule</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>Weekly Schedule</h1>
+
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    <table border="1" cellpadding="10">
+      <thead>
+        <tr>
+          <th>Day \ Period</th>
+          {% for p in periods %}
+            <th>P{{ p }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for d in days %}
+          <tr>
+            <td><strong>{{ d|upper }}</strong></td>
+
+            {% for p in periods %}
+              {% set cell = grid.get(d ~ "-" ~ p|string) %}
+              <td>
+                {% if cell %}
+                  {{ cell }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p><a href="{{ url_for('dashboard', role='teacher') }}">← Back to Dashboard</a></p>
+  </body>
+</html>

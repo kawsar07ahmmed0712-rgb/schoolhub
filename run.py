@@ -1,8 +1,12 @@
-from flask import Flask, render_template, request , redirect, url_for , session
+from flask import Flask, render_template, request , redirect, url_for , session , make_response
 from datetime import datetime 
 from werkzeug.security import check_password_hash 
 from db import connect_db
 from datetime import date, timedelta, datetime
+import os
+import csv
+from werkzeug.utils import secure_filename
+import io
 
 
 
@@ -129,6 +133,7 @@ ROLE_PAGES = {
         ("students", "Student List"),
         ("attendance", "Take Attendance"),
         ("today_schedule", "Today's Schedule"),
+        ("weekly_schedule", "Weekly Schedule"),
         ("daily_class", "Daily Class Update"),
         ("marks", "Marks Entry"),
         ("notices", "Notices"),
@@ -151,6 +156,7 @@ ROLE_PAGES = {
         ("timetable", "Timetable"),
         ("notices", "Notices"),
         ("reports", "Reports"),
+        ("schedule_upload", "Teacher Schedule Upload"),
     ],
 }
 NOTICES = []
@@ -811,12 +817,223 @@ def get_weekday_slug(d: date) -> str:
     mapping = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
     return mapping[d.weekday()]
 
-def get_weekday_slug(d: date) -> str:
-    # Python weekday(): Mon=0 ... Sun=6
-    # Our DB enum: sun, mon, tue, wed, thu, fri, sat
-    mapping = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-    return mapping[d.weekday()]
 
+def import_teacher_schedule_csv_to_db(csv_path: str, dry_run: bool = False) -> dict:
+    allowed_weekdays = {"sun", "mon", "tue", "wed", "thu", "fri", "sat"}
+    required_headers = {"teacher_phone", "weekday", "period_no", "class_no", "section"}
+
+    report = {
+        "mode": "DRY-RUN" if dry_run else "WRITE",
+        "processed": 0,
+        "upserted": 0,
+        "would_import": 0,
+        "skipped": 0,
+        "duplicate_rows": 0,
+        "teacher_not_found": 0,
+        "skip_reasons": {
+            "bad_int": 0,
+            "invalid_weekday": 0,
+            "invalid_section": 0,
+            "invalid_period": 0,
+            "invalid_class": 0,
+            "teacher_not_found": 0,
+            "duplicate": 0,
+            "header_mismatch": 0,
+        },
+        "examples": {
+            "bad_int": [],
+            "invalid_weekday": [],
+            "invalid_section": [],
+            "invalid_period": [],
+            "invalid_class": [],
+            "teacher_not_found": [],
+            "duplicate": [],
+            "header_mismatch": [],
+        },
+    }
+
+    def remember(reason: str, row_num: int, row_data: dict) -> None:
+        if len(report["examples"][reason]) < 3:
+            report["examples"][reason].append({"row": row_num, "data": row_data})
+
+    seen_slots = set()
+    teacher_cache = {}
+
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    try:
+        with open(csv_path, "r", newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+
+            if not reader.fieldnames:
+                report["skip_reasons"]["header_mismatch"] += 1
+                remember("header_mismatch", 0, {"error": "No header row"})
+                raise ValueError("CSV has no header row.")
+
+            headers = set(h.strip() for h in reader.fieldnames)
+            if not required_headers.issubset(headers):
+                report["skip_reasons"]["header_mismatch"] += 1
+                remember("header_mismatch", 0, {"headers": reader.fieldnames})
+                raise ValueError("CSV header mismatch.")
+
+            for i, row in enumerate(reader, start=1):
+                report["processed"] += 1
+
+                teacher_phone = (row.get("teacher_phone") or "").strip()
+                weekday = (row.get("weekday") or "").strip().lower()
+                section = (row.get("section") or "").strip().upper()
+
+                try:
+                    period_no = int((row.get("period_no") or "").strip())
+                    class_no = int((row.get("class_no") or "").strip())
+                except ValueError:
+                    report["skip_reasons"]["bad_int"] += 1
+                    remember("bad_int", i, row)
+                    report["skipped"] += 1
+                    continue
+
+                if weekday not in allowed_weekdays:
+                    report["skip_reasons"]["invalid_weekday"] += 1
+                    remember("invalid_weekday", i, row)
+                    report["skipped"] += 1
+                    continue
+
+                if section not in {"A", "B"}:
+                    report["skip_reasons"]["invalid_section"] += 1
+                    remember("invalid_section", i, row)
+                    report["skipped"] += 1
+                    continue
+
+                if not (1 <= period_no <= 6):
+                    report["skip_reasons"]["invalid_period"] += 1
+                    remember("invalid_period", i, row)
+                    report["skipped"] += 1
+                    continue
+
+                if not (1 <= class_no <= 10):
+                    report["skip_reasons"]["invalid_class"] += 1
+                    remember("invalid_class", i, row)
+                    report["skipped"] += 1
+                    continue
+
+                slot_key = (teacher_phone, weekday, period_no)
+                if slot_key in seen_slots:
+                    report["skip_reasons"]["duplicate"] += 1
+                    remember("duplicate", i, row)
+                    report["duplicate_rows"] += 1
+                    report["skipped"] += 1
+                    continue
+                seen_slots.add(slot_key)
+
+                # teacher_id lookup (cached)
+                if teacher_phone in teacher_cache:
+                    teacher_id = teacher_cache[teacher_phone]
+                else:
+                    cursor.execute(
+                        """
+                        SELECT te.id
+                        FROM teachers te
+                        JOIN users u ON u.id = te.user_id
+                        WHERE u.phone=%s
+                        LIMIT 1
+                        """,
+                        (teacher_phone,),
+                    )
+                    t = cursor.fetchone()
+                    teacher_id = t[0] if t else None
+                    teacher_cache[teacher_phone] = teacher_id
+
+                if not teacher_id:
+                    report["skip_reasons"]["teacher_not_found"] += 1
+                    remember("teacher_not_found", i, row)
+                    report["teacher_not_found"] += 1
+                    report["skipped"] += 1
+                    continue
+
+                if dry_run:
+                    report["would_import"] += 1
+                else:
+                    cursor.execute(
+                        """
+                        INSERT INTO teacher_schedule_slots (teacher_id, weekday, period_no, class_no, section)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                          class_no=VALUES(class_no),
+                          section=VALUES(section)
+                        """,
+                        (teacher_id, weekday, period_no, class_no, section),
+                    )
+                    report["upserted"] += 1
+
+        if not dry_run:
+            conn.commit()
+
+        return report
+
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_schedule_stats() -> dict:
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT COUNT(*) AS total_slots FROM teacher_schedule_slots")
+        total_slots = int(cursor.fetchone()["total_slots"])
+
+        cursor.execute(
+            """
+            SELECT COUNT(DISTINCT teacher_id) AS teacher_count
+            FROM teacher_schedule_slots
+            """
+        )
+        teacher_count = int(cursor.fetchone()["teacher_count"])
+
+        cursor.execute(
+            """
+            SELECT weekday, COUNT(*) AS cnt
+            FROM teacher_schedule_slots
+            GROUP BY weekday
+            ORDER BY FIELD(weekday,'sun','mon','tue','wed','thu','fri','sat')
+            """
+        )
+        by_weekday_rows = cursor.fetchall()
+
+        by_weekday = {r["weekday"]: int(r["cnt"]) for r in by_weekday_rows}
+        today = str(date.today())
+
+        cursor.execute(
+            "SELECT COUNT(*) AS total_today_logs FROM teacher_lesson_logs WHERE log_date=%s",
+            (today,),
+        )
+        total_today_logs = int(cursor.fetchone()["total_today_logs"])
+
+        cursor.execute(
+            "SELECT COUNT(*) AS done_today_logs FROM teacher_lesson_logs WHERE log_date=%s AND is_done=1",
+            (today,),
+        )
+        done_today_logs = int(cursor.fetchone()["done_today_logs"])
+
+        cursor.execute(
+            "SELECT COUNT(DISTINCT teacher_id) AS teachers_updated_today FROM teacher_lesson_logs WHERE log_date=%s",
+            (today,),
+        )
+        teachers_updated_today = int(cursor.fetchone()["teachers_updated_today"])
+
+        return {
+            "total_slots": total_slots,
+            "teacher_count": teacher_count,
+            "by_weekday": by_weekday,
+            "total_today_logs": total_today_logs,
+            "done_today_logs": done_today_logs,
+            "teachers_updated_today": teachers_updated_today,
+
+        }
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @app.route("/dashboard/teacher/today-schedule", methods=["GET", "POST"])
@@ -968,6 +1185,71 @@ def teacher_today_schedule():
         conn.close()
 
 
+
+
+
+@app.get("/dashboard/teacher/weekly-schedule")
+def teacher_weekly_schedule():
+    if session.get("role") != "teacher":
+        return redirect(url_for("login", role="teacher"))
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # 1) Find teacher_id from logged-in user_id
+        cursor.execute("SELECT id FROM teachers WHERE user_id=%s", (session.get("user_id"),))
+        t = cursor.fetchone()
+        if not t:
+            return render_template(
+                "teacher_weekly_schedule.html",
+                days=[],
+                periods=[],
+                grid={},
+                message="Teacher profile not found in DB.",
+            )
+        teacher_id = t["id"]
+
+        # 2) Load weekly slots for this teacher
+        cursor.execute(
+            """
+            SELECT weekday, period_no, class_no, section
+            FROM teacher_schedule_slots
+            WHERE teacher_id=%s
+            ORDER BY FIELD(weekday,'sun','mon','tue','wed','thu','fri','sat'), period_no
+            """,
+            (teacher_id,),
+        )
+        slots = cursor.fetchall()
+
+        # 3) Build grid: key = "sun-1" -> value = "Class 3-A"
+        grid = {}
+        for s in slots:
+            key = f"{s['weekday']}-{int(s['period_no'])}"
+            grid[key] = f"Class {int(s['class_no'])}-{s['section']}"
+
+        days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+        periods = [1, 2, 3, 4, 5, 6]
+
+        msg = None
+        if not slots:
+            msg = "No weekly schedule found for this teacher. (Import schedule first.)"
+
+        return render_template(
+            "teacher_weekly_schedule.html",
+            days=days,
+            periods=periods,
+            grid=grid,
+            message=msg,
+        )
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+
+
 @app.get("/dashboard/head/today-overview")
 def head_today_overview():
     # Only logged-in head can access
@@ -978,26 +1260,26 @@ def head_today_overview():
     today = str(today_obj)
     weekday = get_weekday_slug(today_obj)
 
+    # Read filters from URL query params (strings)
     selected_teacher_id = request.args.get("teacher_id", "").strip()
     selected_class_no = request.args.get("class_no", "").strip()
     selected_section = request.args.get("section", "").strip()
-    selected_status = request.args.get("status", "pending").strip()
-
+    selected_status = request.args.get("status", "pending").strip()  # default pending
 
     conn = connect_db()
     cursor = conn.cursor(dictionary=True)
 
     try:
-        # Join schedule slots with teachers + users, and LEFT JOIN logs for today's status/topic
+        # Load today's schedule slots + today's logs (if any)
         cursor.execute(
             """
             SELECT
               te.name AS teacher_name,
               u.phone AS teacher_phone,
+              s.teacher_id,
               s.period_no,
               s.class_no,
               s.section,
-              s.teacher_id,
               COALESCE(l.topic, '') AS topic,
               COALESCE(l.is_done, 0) AS is_done
             FROM teacher_schedule_slots s
@@ -1013,10 +1295,32 @@ def head_today_overview():
             (today, weekday),
         )
         data = cursor.fetchall()
-        # Teacher-wise summary (based on today's schedule rows)
+
+        # Build dropdown options (unique lists) from today's data
+        teacher_options = {}
+        class_options = {}
+
+        for r in data:
+            tid_int = int(r["teacher_id"])
+            teacher_options[tid_int] = f'{r["teacher_name"]} ({r["teacher_phone"]})'
+
+            key = (int(r["class_no"]), str(r["section"]))
+            class_options[key] = f"Class {key[0]} - {key[1]}"
+
+        # Teacher-wise summary:
+        # Apply class/section filters, BUT ignore teacher/status filter
+        # so head can still see overall progress for that class/section.
         teacher_summary_map = {}
 
         for r in data:
+            cno = str(int(r["class_no"]))
+            sec = str(r["section"])
+
+            if selected_class_no and cno != selected_class_no:
+                continue
+            if selected_section and sec != selected_section:
+                continue
+
             tid = int(r["teacher_id"])
             if tid not in teacher_summary_map:
                 teacher_summary_map[tid] = {
@@ -1039,6 +1343,7 @@ def head_today_overview():
 
             teacher_summary.append(
                 {
+                    "teacher_id": tid,
                     "teacher_name": info["teacher_name"],
                     "teacher_phone": info["teacher_phone"],
                     "total": total,
@@ -1050,17 +1355,7 @@ def head_today_overview():
 
         teacher_summary.sort(key=lambda x: (x["pending"], x["teacher_name"]), reverse=True)
 
-
-        # Build dropdown options from today's data
-        teacher_options = {}
-        class_options = {}
-
-        for r in data:
-            teacher_options[int(r["teacher_id"])] = f'{r["teacher_name"]} ({r["teacher_phone"]})'
-            key = (int(r["class_no"]), r["section"])
-            class_options[key] = f'Class {key[0]} - {key[1]}'
-
-        # Apply filters in Python (simple + safe)
+        # Apply ALL filters for main table (teacher/class/section/status)
         filtered = []
         for r in data:
             tid = str(int(r["teacher_id"]))
@@ -1081,7 +1376,7 @@ def head_today_overview():
 
             filtered.append(r)
 
-        # Summary for current filtered view
+        # Summary for current filtered view (same as table)
         total_count = len(filtered)
         done_count = sum(1 for r in filtered if int(r["is_done"]) == 1)
         pending_count = total_count - done_count
@@ -1094,13 +1389,14 @@ def head_today_overview():
             "percent": done_percent,
         }
 
-
+        # Build rows for template (IMPORTANT: use filtered, not data)
         rows = []
-        for r in data:
+        for r in filtered:
             rows.append(
                 {
                     "teacher_name": r["teacher_name"],
                     "teacher_phone": r["teacher_phone"],
+                    "teacher_id": int(r["teacher_id"]),
                     "period_no": r["period_no"],
                     "class_no": r["class_no"],
                     "section": r["section"],
@@ -1109,9 +1405,12 @@ def head_today_overview():
                 }
             )
 
+        # Message logic
         message = None
-        if not rows:
+        if not data:
             message = "No schedule found for today."
+        elif not rows:
+            message = "No results for current filters."
 
         return render_template(
             "head_today_overview.html",
@@ -1127,11 +1426,130 @@ def head_today_overview():
             selected_status=selected_status,
             summary=summary,
             teacher_summary=teacher_summary,
-
         )
     finally:
         cursor.close()
         conn.close()
+
+
+
+
+@app.route("/dashboard/admin/schedule-upload", methods=["GET", "POST"])
+def admin_schedule_upload():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    report = None
+    message = None
+    # If redirected with a message (e.g., after clearing schedule)
+    if request.method == "GET" and not message:
+        message = request.args.get("msg")
+
+    if request.method == "POST":
+        f = request.files.get("csv_file")
+        dry_run = True if request.form.get("dry_run") == "on" else False
+
+        if not f or not f.filename:
+            message = "No file selected."
+            return render_template("admin_schedule_upload.html", report=None, message=message)
+
+        if not f.filename.lower().endswith(".csv"):
+            message = "Only .csv files are allowed."
+            return render_template("admin_schedule_upload.html", report=None, message=message)
+
+        os.makedirs(os.path.join("Database", "uploads"), exist_ok=True)
+        filename = secure_filename(f.filename)
+        save_path = os.path.join("Database", "uploads", filename)
+        f.save(save_path)
+
+        try:
+            report = import_teacher_schedule_csv_to_db(save_path, dry_run=dry_run)
+            message = "✅ Import completed."
+        except Exception as e:
+            message = f"❌ Import failed: {e}"
+
+    stats = get_schedule_stats()
+    return render_template("admin_schedule_upload.html", report=report, message=message, stats=stats)
+
+
+@app.get("/dashboard/admin/schedule-sample.csv")
+def admin_schedule_sample_csv():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header (must match importer)
+    writer.writerow(["teacher_phone", "weekday", "period_no", "class_no", "section"])
+
+    # Sample rows (replace teacher_phone with real teacher phone from your DB)
+    writer.writerow(["01664967554", "sun", "1", "3", "A"])
+    writer.writerow(["01664967554", "sun", "2", "3", "A"])
+
+    csv_text = output.getvalue()
+    output.close()
+
+    resp = make_response(csv_text)
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = "attachment; filename=teacher_schedule_sample.csv"
+    return resp
+
+@app.post("/dashboard/admin/schedule-clear")
+def admin_schedule_clear():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    confirm = request.form.get("confirm") == "on"
+    confirm_text = (request.form.get("confirm_text") or "").strip().upper()
+
+    # Strong safety check
+    if (not confirm) or (confirm_text != "DELETE"):
+        return redirect(url_for("admin_schedule_upload", msg="❌ Not cleared. Please check confirm and type DELETE."))
+
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("DELETE FROM teacher_schedule_slots")
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for("admin_schedule_upload", msg="✅ All teacher schedule slots cleared."))
+
+
+@app.post("/dashboard/admin/today-logs-clear")
+def admin_today_logs_clear():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    confirm = request.form.get("confirm") == "on"
+    confirm_text = (request.form.get("confirm_text") or "").strip().upper()
+
+    if (not confirm) or (confirm_text != "CLEAR TODAY"):
+        return redirect(
+            url_for("admin_schedule_upload", msg="❌ Not cleared. Please check confirm and type CLEAR TODAY.")
+        )
+
+    today = str(date.today())
+
+    conn = connect_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM teacher_lesson_logs WHERE log_date=%s", (today,))
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for("admin_schedule_upload", msg="✅ Today's teacher lesson logs cleared."))
+
+
+
+
+
 
 
 @app.get("/logout")

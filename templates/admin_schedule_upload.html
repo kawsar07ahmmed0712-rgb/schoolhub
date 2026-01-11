@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Teacher Schedule Upload</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <h1>Teacher Schedule Upload (CSV)</h1>
+    {% if stats %}
+    <hr />
+    <h2>Current Schedule Stats</h2>
+
+    <p>
+        <strong>Total Slots:</strong> {{ stats.total_slots }}
+        | <strong>Teachers with Schedule:</strong> {{ stats.teacher_count }}
+    </p>
+
+    <h3>Today Logs Stats</h3>
+    <p>
+        <strong>Total Logs Today:</strong> {{ stats.total_today_logs }}
+        | <strong>Done Today:</strong> {{ stats.done_today_logs }}
+        | <strong>Teachers Updated Today:</strong> {{ stats.teachers_updated_today }}
+    </p>
+
+    <h3>Weekday-wise Slots</h3>
+    <ul>
+        <li>Sun: {{ stats.by_weekday.get('sun', 0) }}</li>
+        <li>Mon: {{ stats.by_weekday.get('mon', 0) }}</li>
+        <li>Tue: {{ stats.by_weekday.get('tue', 0) }}</li>
+        <li>Wed: {{ stats.by_weekday.get('wed', 0) }}</li>
+        <li>Thu: {{ stats.by_weekday.get('thu', 0) }}</li>
+        <li>Fri: {{ stats.by_weekday.get('fri', 0) }}</li>
+        <li>Sat: {{ stats.by_weekday.get('sat', 0) }}</li>
+    </ul>
+
+    <hr />
+    <h2 style="color: red;">Danger Zone</h2>
+
+    <p>
+        This will delete <strong>ALL</strong> rows from <code>teacher_schedule_slots</code>.
+        Use only if you want to reset schedule data.
+    </p>
+
+    <form method="post" action="{{ url_for('admin_schedule_clear') }}">
+        <label>
+        <input type="checkbox" name="confirm" />
+        I understand this will permanently delete all schedule slots
+        </label>
+
+        <br /><br />
+
+        <label for="confirm_text">Type <strong>DELETE</strong> to confirm:</label><br />
+        <input id="confirm_text" name="confirm_text" type="text" />
+
+        <br /><br />
+
+        <button type="submit" style="background: red; color: white;">Clear Schedule</button>
+    </form>
+
+    <hr />
+
+    <h3 style="color: red;">Clear Today's Teacher Logs</h3>
+    <p>
+        This will delete only today's rows from <code>teacher_lesson_logs</code>.
+        Schedule will remain unchanged.
+    </p>
+
+    <form method="post" action="{{ url_for('admin_today_logs_clear') }}">
+        <label>
+        <input type="checkbox" name="confirm" />
+        I understand this will delete today's teacher lesson logs
+        </label>
+
+        <br /><br />
+
+        <label for="confirm_text_today">Type <strong>CLEAR TODAY</strong> to confirm:</label><br />
+        <input id="confirm_text_today" name="confirm_text" type="text" />
+
+        <br /><br />
+
+        <button type="submit" style="background: red; color: white;">Clear Today's Logs</button>
+    </form>
+
+    <hr />
+    {% endif %}
+
+
+
+    <p>
+        <a href="{{ url_for('admin_schedule_sample_csv') }}">Download sample CSV</a>
+    </p>
+
+    <p>
+      Expected header:
+      <code>teacher_phone,weekday,period_no,class_no,section</code>
+    </p>
+
+    {% if message %}
+      <p><strong>{{ message }}</strong></p>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('admin_schedule_upload') }}">
+      <label for="csv_file">CSV File</label>
+      <input id="csv_file" type="file" name="csv_file" accept=".csv" required />
+
+      <label>
+        <input type="checkbox" name="dry_run" />
+        Dry-run (do not write to DB)
+      </label>
+
+      <button type="submit">Upload & Import</button>
+    </form>
+
+    <hr />
+
+    {% if report %}
+      <h2>Import Report</h2>
+      <p>
+        <strong>Mode:</strong> {{ report.mode }} |
+        <strong>Processed:</strong> {{ report.processed }} |
+        <strong>Upserted:</strong> {{ report.upserted }} |
+        <strong>Would import:</strong> {{ report.would_import }} |
+        <strong>Skipped:</strong> {{ report.skipped }} |
+        <strong>Duplicates:</strong> {{ report.duplicate_rows }} |
+        <strong>Teacher not found:</strong> {{ report.teacher_not_found }}
+      </p>
+
+      <h3>Skip reasons</h3>
+      <pre>{{ report.skip_reasons }}</pre>
+
+      {% if report.examples %}
+        <h3>Examples (up to 3 per reason)</h3>
+        {% for reason, items in report.examples.items() %}
+          {% if items %}
+            <h4>{{ reason }}</h4>
+            <ul>
+              {% for ex in items %}
+                <li>row {{ ex.row }}: <code>{{ ex.data }}</code></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+
+    <p><a href="{{ url_for('dashboard', role='admin') }}">← Back to Dashboard</a></p>
+  </body>
+</html>
