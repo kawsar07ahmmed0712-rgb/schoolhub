@@ -18,7 +18,13 @@
   };
 
   const saved = readTheme();
-  if (saved === "light" || saved === "dark") applyTheme(saved);
+  if (saved === "light" || saved === "dark") {
+    applyTheme(saved);
+  } else {
+    // Default: prefer light for SchoolHub; respect OS dark preference if set.
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    applyTheme(prefersDark ? "dark" : "light");
+  }
 
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-action]");
@@ -33,4 +39,3 @@
     }
   });
 })();
-

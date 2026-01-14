@@ -2,6 +2,9 @@
 
 Learning project using **Python + Flask + MySQL**.
 
+## Quick links
+- Video narration script: `VIDEO_TUTORIAL_SCRIPT.txt`
+
 ## Prerequisites
 - Python 3.10+
 - MySQL Server (local)
@@ -135,4 +138,3 @@ Use this flow to verify the project step-by-step.
 - “Database not initialized” pages: run `python manage.py init-tables`
 - No student routine: run `python manage.py import-teacher-schedule --csv Database/teacher_schedule.csv`
 - Login fails: re-run `python manage.py import-accounts` / `python manage.py import-students`
-

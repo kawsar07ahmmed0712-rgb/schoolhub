@@ -1,0 +1,233 @@
+Hello guys, welcome to this interesting project.
+
+Today in this video I am going to show you a complete School Management System (SMS) project.
+It is created with:
+- Python
+- Flask
+- MySQL (Database)
+- A modern, animated UI (web app)
+
+As we go ahead I will:
+1) Show the full UI (how the website looks and works)
+2) Then I will show the code structure in VS Code
+3) Finally, I will explain how you can run it locally using the README roadmap
+
+Unfortunately, I could not deploy it (I tried, but I could not finish deployment yet).
+In the next upgraded version, I will improve more features and deploy it properly.
+
+
+============================================================
+1) RUN THE PROJECT (LOCAL)
+============================================================
+
+Step 1: Open terminal (PowerShell / Git Bash)
+
+Step 2: Run the server:
+python manage.py run --debug
+
+Step 3: Ctrl + click the URL in terminal, or open in browser:
+http://127.0.0.1:5000/
+
+Now you will see the landing page with 4 roles:
+- Student
+- Teacher
+- Head Teacher
+- Admin
+
+
+============================================================
+2) STUDENT FLOW (LOGIN + DASHBOARD + FEATURES)
+============================================================
+
+Step 1: Click "Continue as Student"
+
+Step 2: Login using the demo Student credentials from README.md.
+(I keep quick copy/paste credentials in the README so interviewers can test fast.)
+
+Step 3: After login, you will land on the Student Dashboard.
+
+Student Dashboard overview:
+- Profile summary (name/class/section/roll if available)
+- Quick Actions
+- Sidebar menu (Student modules)
+
+Student modules (what you can test):
+
+1) Profile
+   - Shows profile summary and basic student information.
+
+2) Fees (Monthly)
+   - Shows month-wise fee status: total amount, paid, and due.
+
+3) My Payments
+   - Shows payment history and lets the student open a receipt page.
+
+4) Results
+   - Shows published exam results (only when the Head Teacher publishes results for the class).
+
+5) Attendance & Leave
+   - Attendance history is shown here (after a teacher takes attendance).
+
+6) Leave Requests
+   - Student can submit a leave request with from/to dates and reason.
+   - Student can track status: pending / approved / rejected.
+
+7) Notices
+   - Student can read notices posted by Teacher / Head / Admin.
+
+8) Routine
+   - Weekly routine view for student class/section (based on teacher schedule slots).
+
+
+============================================================
+3) TEACHER FLOW (ATTENDANCE + NOTICES + MARKS + LEAVES)
+============================================================
+
+Step 1: Logout
+
+Step 2: Go to Teacher login:
+http://127.0.0.1:5000/login?role=teacher
+
+Step 3: Login using the demo Teacher credentials from README.md.
+
+Teacher Dashboard modules:
+
+1) Student List
+   - Shows students of the teacher’s assigned class/section.
+   - Includes search by name/phone.
+
+2) Take Attendance
+   - Teacher selects date, marks students present/absent, and saves.
+
+3) Daily Class Update
+   - Teacher updates per period: topic/homework/notes.
+
+4) Today's Schedule
+   - Teacher sees today’s periods (1–6) from schedule slots.
+   - Teacher can mark a period as done and write topic/homework/notes.
+
+5) Weekly Schedule
+   - Weekly timetable grid for the teacher.
+
+6) Marks Entry
+   - Teacher can create an exam (example: Midterm)
+   - Select a subject and max marks
+   - Enter marks for students and save
+
+7) Notices
+   - Teacher can publish notices
+   - Students can view these notices immediately
+
+8) Leave Approvals
+   - Teacher can approve/reject pending leave requests
+     (for the teacher’s assigned class/section)
+
+
+============================================================
+4) DEMO: TEACHER POSTS A NOTICE -> STUDENT SEES IT
+============================================================
+
+Step 1: Login as Teacher
+Step 2: Open "Notices"
+Step 3: Post a notice (example):
+  Title: Test Notice
+  Body: This notice was posted by a teacher.
+Step 4: Logout
+
+Step 5: Login as Student
+Step 6: Open "Notices"
+Step 7: Confirm the notice is visible
+
+
+============================================================
+5) DEMO: TEACHER TAKES ATTENDANCE -> STUDENT SEES ATTENDANCE
+============================================================
+
+Step 1: Login as Teacher
+Step 2: Open "Take Attendance"
+Step 3: Choose today’s date and save
+Step 4: Logout
+
+Step 5: Login as Student
+Step 6: Open "Attendance & Leave"
+Step 7: Confirm attendance shows in the list and summary
+
+
+============================================================
+6) ADMIN FLOW (FEES + PAYMENTS + USERS + SETTINGS + TIMETABLE)
+============================================================
+
+Step 1: Logout
+
+Step 2: Go to Admin login:
+http://127.0.0.1:5000/login?role=admin
+
+Step 3: Login using the demo Admin credentials from README.md.
+
+Admin modules:
+
+1) School Settings
+   - Change SCHOOL_NAME and ACADEMIC_YEAR (stored in DB).
+
+2) Users Management
+   - Filter users by role/status/phone
+   - Activate/deactivate users (for admin control)
+
+3) Fees Setup
+   - Create monthly fee plans per class/section/year/month
+
+4) Payments
+   - Record a payment for a student for a month
+
+5) Payments History
+   - Filterable payments list + receipt view
+
+6) Timetable
+   - View class timetable based on imported teacher schedule slots
+
+7) Reports
+   - Quick database statistics (users, students, teachers, notices, payments, pending leaves)
+
+
+============================================================
+7) HEAD TEACHER FLOW (OVERVIEW + RESULTS PUBLISH + APPROVALS)
+============================================================
+
+Step 1: Logout
+
+Step 2: Go to Head Teacher login:
+http://127.0.0.1:5000/login?role=head
+
+Step 3: Login using the demo Head Teacher credentials from README.md.
+
+Head Teacher modules:
+
+1) Today's Overview
+   - Shows teaching progress for today:
+     - which periods are DONE/PENDING
+     - topic preview
+     - filters and summaries
+
+2) Teachers Management
+   - Overview of teachers, assignments, schedule slots count
+
+3) Results Publish/Lock
+   - Create an exam (example: Final)
+   - Publish/unpublish results per class/section
+
+4) Approvals
+   - Approve/reject leave requests across the school
+
+5) Reports
+   - Progress overview and summary stats (today logs, leaves, exams)
+
+
+============================================================
+8) FINAL NOTE
+============================================================
+
+This project is a learning + showcase project.
+For local running instructions, please follow README.md step-by-step.
+
+Thank you for watching!
+
