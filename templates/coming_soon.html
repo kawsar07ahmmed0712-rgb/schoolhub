@@ -2,12 +2,60 @@
 {% extends "_base.html" %}
 
 {% block content %}
-  <div class="card card-pad" style="max-width: 860px;">
-    <h1>Coming Soon</h1>
-    <p class="muted"><strong>{{ page }}</strong> page is coming soon.</p>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
-      <a class="btn btn-primary" href="/dashboard/{{ role }}/">Back to Dashboard</a>
-      <a class="btn btn-ghost" href="{{ url_for('notices', role=role) }}">Notices</a>
-    </div>
+  {% set role_ = role or session_role %}
+  {% set all_pages = role_pages.get(role_, []) if role_ else [] %}
+  {% set implemented = nav_links.keys()|list if nav_links else [] %}
+  {% set planned = [] %}
+  {% for slug, label in all_pages %}
+    {% if slug not in implemented %}
+      {% set _ = planned.append({'slug': slug, 'label': label}) %}
+    {% endif %}
+  {% endfor %}
+
+  <div class="grid" style="max-width: 1100px;">
+    <section class="card card-pad">
+      <h1>Coming Soon</h1>
+      <p class="muted">
+        <strong>{{ page }}</strong> is not implemented yet for the <span class="badge">{{ role_ }}</span> role.
+      </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
+        <a class="btn btn-primary" href="/dashboard/{{ role_ }}/">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('notices', role=role_) }}">Notices</a>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Available Now</h2>
+      <p class="muted">These modules are ready for your role.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
+        {% for slug, label in all_pages %}
+          {% if slug in implemented %}
+            <a class="btn" href="{{ nav_links.get(slug) }}">{{ label }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Planned</h2>
+      <p class="muted">These are on the roadmap for this project.</p>
+      {% if planned %}
+        <div class="grid grid-3" style="margin-top: 12px;">
+          {% for item in planned %}
+            <div class="card card-pad" style="box-shadow:none;">
+              <div style="font-weight: 760;">{{ item.label }}</div>
+              <div class="muted" style="font-size: 13px; margin-top: 2px;">{{ item.slug.replace('_',' ') }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">Everything for this role is implemented.</p>
+      {% endif %}
+
+      <div class="alert" style="margin-top: 14px;">
+        <strong>Want this next?</strong>
+        <div class="muted">Tell me which page you want to implement first (and what features it should have).</div>
+      </div>
+    </section>
   </div>
 {% endblock %}

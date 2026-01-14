@@ -267,6 +267,7 @@ def build_nav_links(role: str) -> dict:
         "fees": url_for("student_fees"),
         "payments": url_for("student_payments_history"),
         "attendance": url_for("student_attendance"),
+        "routine": url_for("student_routine"),
       }
     )
   elif role == "teacher":
@@ -283,11 +284,14 @@ def build_nav_links(role: str) -> dict:
     links.update(
       {
         "today_overview": url_for("head_today_overview"),
+        "teachers": url_for("head_teachers"),
       }
     )
   elif role == "admin":
     links.update(
       {
+        "settings": url_for("admin_settings"),
+        "users": url_for("admin_users"),
         "fees_setup": url_for("admin_fees_setup"),
         "payments": url_for("admin_payments"),
         "payments_history": url_for("admin_payments_history"),
@@ -302,8 +306,22 @@ def build_nav_links(role: str) -> dict:
 def inject_layout_globals():
   role = session.get("role")
   role_norm = normalize_role(role) if role else None
+  school_name = os.getenv("SCHOOL_NAME")
+  if not school_name:
+    try:
+      conn = connect_db()
+      cur = conn.cursor(dictionary=True)
+      try:
+        cur.execute("SELECT value FROM school_settings WHERE `key`='SCHOOL_NAME' LIMIT 1")
+        row = cur.fetchone()
+        school_name = (row or {}).get("value") or None
+      finally:
+        cur.close()
+        conn.close()
+    except Exception:
+      school_name = None
   return {
-    "app_name": "SchoolHub",
+    "app_name": school_name or "SchoolHub",
     "session_role": role_norm,
     "session_phone": session.get("phone"),
     "role_pages": ROLE_PAGES,
@@ -940,9 +958,82 @@ def student_attendance():
         conn.close()
 
 
+@app.get("/dashboard/student/routine")
+def student_routine():
+    if session.get("role") != "student":
+        return redirect(url_for("login", role="student"))
+
+    profile = fetch_role_profile(session.get("user_id"), "student")
+    if not profile or "class_no" not in profile or "section" not in profile:
+        return render_template(
+            "student_routine.html",
+            class_no=None,
+            section=None,
+            days=[],
+            periods=[],
+            grid={},
+            message="Class/section not found for this student yet.",
+        )
+
+    class_no = int(profile["class_no"])
+    section = str(profile["section"]).upper()
+
+    days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+    periods = [1, 2, 3, 4, 5, 6]
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT
+              s.weekday,
+              s.period_no,
+              t.name AS teacher_name,
+              u.phone AS teacher_phone
+            FROM teacher_schedule_slots s
+            JOIN teachers t ON t.id = s.teacher_id
+            JOIN users u ON u.id = t.user_id
+            WHERE s.class_no=%s AND s.section=%s
+            ORDER BY FIELD(s.weekday,'sun','mon','tue','wed','thu','fri','sat'), s.period_no
+            """,
+            (class_no, section),
+        )
+        rows = cursor.fetchall() or []
+
+        grid = {}
+        for r in rows:
+            key = f"{r['weekday']}-{int(r['period_no'])}"
+            grid[key] = {"teacher_name": r.get("teacher_name") or "-", "teacher_phone": r.get("teacher_phone") or "-"}
+
+        message = None if rows else "No routine found yet for your class/section."
+
+        return render_template(
+            "student_routine.html",
+            class_no=class_no,
+            section=section,
+            days=days,
+            periods=periods,
+            grid=grid,
+            message=message,
+        )
+    except Exception:
+        app.logger.exception("student_routine failed")
+        return render_template(
+            "student_routine.html",
+            class_no=class_no,
+            section=section,
+            days=[],
+            periods=[],
+            grid={},
+            message="Could not load routine. Make sure schedule tables are initialized and schedule is imported.",
+        )
+    finally:
+        cursor.close()
+        conn.close()
 
 
-########################################### TEACHER PART TEACHER PART TEACHER PART ########################################
+ ########################################### TEACHER PART TEACHER PART TEACHER PART ########################################
 @app.get("/dashboard/teacher/daily-class")
 def teacher_daily_class():
     # Only logged-in teachers can access
@@ -1490,6 +1581,53 @@ def teacher_weekly_schedule():
 
 ########################################### HEAD TEACHER PART - HEAD TEACHER PART - HEAD TEACHER PART - HEAD TEACHER PART ########################################
 
+@app.get("/dashboard/head/teachers")
+def head_teachers():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT
+              t.id AS teacher_id,
+              t.name AS teacher_name,
+              t.teacher_code,
+              u.phone AS teacher_phone,
+              a.class_no,
+              a.section,
+              a.academic_year,
+              (SELECT COUNT(*) FROM teacher_schedule_slots s WHERE s.teacher_id = t.id) AS schedule_slots
+            FROM teachers t
+            JOIN users u ON u.id = t.user_id
+            LEFT JOIN (
+              SELECT c1.teacher_id, c1.class_no, c1.section, c1.academic_year
+              FROM class_teacher_assignments c1
+              WHERE c1.id = (
+                SELECT MAX(c2.id) FROM class_teacher_assignments c2 WHERE c2.teacher_id = c1.teacher_id
+              )
+            ) a ON a.teacher_id = t.id
+            ORDER BY t.name ASC
+            """
+        )
+        rows = cursor.fetchall() or []
+        return render_template("head_teachers.html", rows=rows, message=request.args.get("msg"))
+    except Exception:
+        app.logger.exception("head_teachers failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` to create required tables, then refresh this page.",
+            role="head",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 @app.get("/dashboard/head/today-overview")
 def head_today_overview():
     # Only logged-in head can access
@@ -1721,6 +1859,143 @@ def head_today_overview():
 
 
 ################################################ ADMIN PART ADMIN PART ADMIN PART ADMIN PART #############################################
+@app.route("/dashboard/admin/settings", methods=["GET", "POST"])
+def admin_settings():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    settings = {"school_name": None, "academic_year": None}
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        if request.method == "POST":
+            school_name = (request.form.get("school_name") or "").strip()
+            academic_year = (request.form.get("academic_year") or "").strip()
+
+            if school_name:
+                cursor.execute(
+                    """
+                    INSERT INTO school_settings (`key`, `value`) VALUES ('SCHOOL_NAME', %s)
+                    ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)
+                    """,
+                    (school_name[:120],),
+                )
+            else:
+                cursor.execute("DELETE FROM school_settings WHERE `key`='SCHOOL_NAME'")
+
+            if academic_year:
+                try:
+                    int(academic_year)
+                except ValueError:
+                    return render_template(
+                        "admin_settings.html",
+                        settings=settings,
+                        message="Academic year must be a number.",
+                    )
+                cursor.execute(
+                    """
+                    INSERT INTO school_settings (`key`, `value`) VALUES ('ACADEMIC_YEAR', %s)
+                    ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)
+                    """,
+                    (academic_year,),
+                )
+            else:
+                cursor.execute("DELETE FROM school_settings WHERE `key`='ACADEMIC_YEAR'")
+
+            conn.commit()
+            message = "Settings saved."
+        else:
+            message = request.args.get("msg")
+
+        cursor.execute("SELECT `key`, `value` FROM school_settings WHERE `key` IN ('SCHOOL_NAME','ACADEMIC_YEAR')")
+        for r in cursor.fetchall() or []:
+            if r["key"] == "SCHOOL_NAME":
+                settings["school_name"] = r["value"]
+            if r["key"] == "ACADEMIC_YEAR":
+                settings["academic_year"] = r["value"]
+
+        return render_template("admin_settings.html", settings=settings, message=message)
+    except Exception:
+        app.logger.exception("admin_settings failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` to create required tables, then refresh this page.",
+            role="admin",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.get("/dashboard/admin/users")
+def admin_users():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    role = (request.args.get("role") or "").strip()
+    active = (request.args.get("active") or "").strip()
+    phone = (request.args.get("phone") or "").strip()
+
+    sql = "SELECT id, phone, role, is_active, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at FROM users WHERE 1=1"
+    params = []
+
+    if role in {"student", "teacher", "head", "admin"}:
+        sql += " AND role=%s"
+        params.append(role)
+    if active in {"0", "1"}:
+        sql += " AND is_active=%s"
+        params.append(int(active))
+    if phone:
+        sql += " AND phone LIKE %s"
+        params.append(f"%{phone}%")
+
+    sql += " ORDER BY created_at DESC, id DESC LIMIT 500"
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(sql, tuple(params))
+        rows = cursor.fetchall() or []
+        return render_template(
+            "admin_users.html",
+            rows=rows,
+            filters={"role": role, "active": active, "phone": phone},
+            session_user_id=int(session.get("user_id") or 0),
+            message=request.args.get("msg"),
+        )
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.post("/dashboard/admin/users/<int:user_id>/toggle")
+def admin_user_toggle(user_id: int):
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    me = int(session.get("user_id") or 0)
+    if user_id == me:
+        return redirect(url_for("admin_users", msg="You cannot change your own account status."))
+
+    conn = connect_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET is_active = 1 - is_active WHERE id=%s", (int(user_id),))
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+    redirect_to = request.form.get("redirect") or url_for("admin_users")
+    if "msg=" in redirect_to:
+        return redirect(redirect_to)
+    sep = "&" if "?" in redirect_to else "?"
+    return redirect(f"{redirect_to}{sep}msg=User status updated.")
+
+
 @app.route("/dashboard/admin/schedule-upload", methods=["GET", "POST"])
 def admin_schedule_upload():
     if session.get("role") != "admin":

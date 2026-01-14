@@ -1,0 +1,57 @@
+{% set page_title = "Routine" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Class Routine</h1>
+      {% if class_no and section %}
+        <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }}</p>
+      {% endif %}
+      <p class="muted">A weekly view of subjects/teachers by period.</p>
+    </section>
+
+    <section class="card card-pad">
+      {% if not days or not periods %}
+        <p class="muted">{{ message or "No routine found." }}</p>
+      {% else %}
+        <div style="overflow:auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Day / Period</th>
+                {% for p in periods %}
+                  <th>P{{ p }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in days %}
+                <tr>
+                  <td><strong>{{ d|upper }}</strong></td>
+                  {% for p in periods %}
+                    {% set cell = grid.get(d ~ '-' ~ p|string) %}
+                    <td>
+                      {% if cell %}
+                        <div style="font-weight: 700;">{{ cell.teacher_name }}</div>
+                        <div class="muted" style="font-size: 12px;">{{ cell.teacher_phone }}</div>
+                      {% else %}
+                        <span class="muted">-</span>
+                      {% endif %}
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/student/">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('student_fees') }}">Fees</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

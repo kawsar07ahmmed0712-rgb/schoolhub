@@ -128,6 +128,17 @@ def main():
     )
 
     cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS school_settings (
+            `key` VARCHAR(64) NOT NULL PRIMARY KEY,
+            `value` TEXT NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+              ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """
+    )
+
+    cursor.execute(
       """
       CREATE TABLE IF NOT EXISTS fee_plans (
         id INT AUTO_INCREMENT PRIMARY KEY,

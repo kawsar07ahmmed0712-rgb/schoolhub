@@ -58,6 +58,7 @@
             <a class="btn" href="{{ url_for('student_fees') }}">Fees</a>
             <a class="btn" href="{{ url_for('student_attendance') }}">Attendance</a>
             <a class="btn" href="{{ url_for('student_payments_history') }}">My Payments</a>
+            <a class="btn" href="{{ url_for('student_routine') }}">Routine</a>
           {% elif role_ == "teacher" %}
             <a class="btn" href="{{ url_for('teacher_today_schedule') }}">Today's Schedule</a>
             <a class="btn" href="{{ url_for('teacher_attendance', role='teacher') }}">Take Attendance</a>
@@ -66,8 +67,11 @@
             <a class="btn" href="{{ url_for('admin_schedule_upload') }}">Upload Schedule</a>
             <a class="btn" href="{{ url_for('admin_payments') }}">Record Payment</a>
             <a class="btn" href="{{ url_for('admin_payments_history') }}">Payments History</a>
+            <a class="btn" href="{{ url_for('admin_users') }}">Users</a>
+            <a class="btn" href="{{ url_for('admin_settings') }}">Settings</a>
           {% elif role_ == "head" %}
             <a class="btn" href="{{ url_for('head_today_overview') }}">Today's Overview</a>
+            <a class="btn" href="{{ url_for('head_teachers') }}">Teachers</a>
           {% endif %}
           <a class="btn btn-ghost" href="{{ url_for('notices', role=role_) }}">Notices</a>
         </div>

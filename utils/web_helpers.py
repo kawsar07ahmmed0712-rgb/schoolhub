@@ -23,6 +23,21 @@ def get_academic_year() -> int:
             return int(value)
         except ValueError:
             pass
+    try:
+        from db import connect_db
+
+        conn = connect_db()
+        cur = conn.cursor(dictionary=True)
+        try:
+            cur.execute("SELECT value FROM school_settings WHERE `key`='ACADEMIC_YEAR' LIMIT 1")
+            row = cur.fetchone()
+            if row and row.get("value"):
+                return int(str(row["value"]).strip())
+        finally:
+            cur.close()
+            conn.close()
+    except Exception:
+        pass
     return datetime.now().year
 
 
@@ -58,4 +73,3 @@ def require_role(required_role: str):
         return wrapper  # type: ignore[return-value]
 
     return decorator
-

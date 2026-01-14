@@ -1,0 +1,35 @@
+{% set page_title = "Settings" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 900px;">
+    <section class="card card-pad">
+      <h1>School Settings</h1>
+      <p class="muted">These settings are stored in the database and used in the UI.</p>
+    </section>
+
+    <section class="card card-pad">
+      <form method="post" class="form-row">
+        <div>
+          <label>School Name</label>
+          <input name="school_name" value="{{ settings.school_name or '' }}" placeholder="e.g. My High School" />
+        </div>
+        <div>
+          <label>Academic Year</label>
+          <input name="academic_year" value="{{ settings.academic_year or '' }}" inputmode="numeric" placeholder="e.g. 2026" />
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Save Settings</button>
+          <a class="btn btn-ghost" href="/dashboard/admin/">Back to Dashboard</a>
+        </div>
+      </form>
+
+      <div class="alert" style="margin-top: 14px;">
+        <div><strong>Tip:</strong> You can also set environment variables:</div>
+        <div class="muted"><code>SCHOOL_NAME</code>, <code>ACADEMIC_YEAR</code></div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

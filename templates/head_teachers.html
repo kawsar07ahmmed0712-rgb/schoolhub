@@ -1,0 +1,58 @@
+{% set page_title = "Teachers" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1300px;">
+    <section class="card card-pad">
+      <h1>Teachers Management</h1>
+      <p class="muted">Quick overview of teachers, class assignments, and schedule availability.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
+        <a class="btn btn-ghost" href="{{ url_for('head_today_overview') }}">Today's Overview</a>
+        <a class="btn btn-ghost" href="/dashboard/head/">Back to Dashboard</a>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Teachers</h2>
+      {% if rows %}
+        <div style="overflow:auto; margin-top: 10px;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Teacher Code</th>
+                <th>Class Teacher For</th>
+                <th>Schedule Slots</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.teacher_name }}</td>
+                  <td>{{ r.teacher_phone }}</td>
+                  <td>{{ r.teacher_code }}</td>
+                  <td>
+                    {% if r.class_no %}
+                      Class {{ r.class_no }} - {{ r.section }} ({{ r.academic_year }})
+                    {% else %}
+                      <span class="muted">Not assigned</span>
+                    {% endif %}
+                  </td>
+                  <td><strong>{{ r.schedule_slots }}</strong></td>
+                  <td>
+                    <a class="btn btn-ghost" href="{{ url_for('head_today_overview', teacher_id=r.teacher_id, status='all') }}">View today</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">No teachers found.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+

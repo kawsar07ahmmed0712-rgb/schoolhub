@@ -1,0 +1,96 @@
+{% set page_title = "Users" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1300px;">
+    <section class="card card-pad">
+      <h1>Users Management</h1>
+      <p class="muted">Activate/deactivate accounts and filter by role.</p>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Filters</h2>
+      <form method="get" action="{{ url_for('admin_users') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-3">
+          <div>
+            <label>Role</label>
+            <select name="role">
+              <option value="">All</option>
+              {% for r in ['student','teacher','head','admin'] %}
+                <option value="{{ r }}" {% if filters.role == r %}selected{% endif %}>{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label>Status</label>
+            <select name="active">
+              <option value="">All</option>
+              <option value="1" {% if filters.active == '1' %}selected{% endif %}>Active</option>
+              <option value="0" {% if filters.active == '0' %}selected{% endif %}>Inactive</option>
+            </select>
+          </div>
+          <div>
+            <label>Phone</label>
+            <input name="phone" value="{{ filters.phone }}" placeholder="Search phone" />
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Apply</button>
+          <a class="btn btn-ghost" href="{{ url_for('admin_users') }}">Reset</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Users</h2>
+      {% if rows %}
+        <div style="overflow:auto; margin-top: 10px;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in rows %}
+                <tr>
+                  <td>{{ u.id }}</td>
+                  <td>{{ u.phone }}</td>
+                  <td><span class="badge">{{ u.role }}</span></td>
+                  <td>
+                    {% if u.is_active == 1 %}
+                      <strong>Active</strong>
+                    {% else %}
+                      <span class="muted">Inactive</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ u.created_at }}</td>
+                  <td>
+                    {% if u.id == session_user_id %}
+                      <span class="muted">Current user</span>
+                    {% else %}
+                      <form method="post" action="{{ url_for('admin_user_toggle', user_id=u.id) }}">
+                        <input type="hidden" name="redirect" value="{{ request.full_path }}" />
+                        <button class="btn btn-ghost" type="submit">
+                          {% if u.is_active == 1 %}Deactivate{% else %}Activate{% endif %}
+                        </button>
+                      </form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">No users found.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+
