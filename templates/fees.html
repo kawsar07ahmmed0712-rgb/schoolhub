@@ -1,0 +1,25 @@
+<h2>Fees (Monthly) - {{ academic_year }}</h2>
+<p>Role: {{ role }}</p>
+<p>Logged in as: {{ phone }}</p>
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+{% if rows|length == 0 %}
+  <p>No fee plans yet.</p>
+{% else %}
+  <table border="1" cellpadding="6">
+    <tr>
+      <th>Month</th><th>Amount</th><th>Paid</th><th>Due</th>
+    </tr>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.fee_month }}</td>
+        <td>{{ r.amount }}</td>
+        <td>{{ r.paid_total }}</td>
+        <td>{{ r.due }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endif %}
+
+<p><a href="/dashboard/student/">← Back to Dashboard</a></p>

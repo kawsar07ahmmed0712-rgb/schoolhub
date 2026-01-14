@@ -127,8 +127,40 @@ def main():
     """
     )
 
+    cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS fee_plans (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        class_no TINYINT NOT NULL,
+        section ENUM('A','B') NOT NULL,
+        academic_year INT NOT NULL,
+        fee_month TINYINT NOT NULL,
+        amount INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_plan (class_no, section, academic_year, fee_month)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      """
+    )
 
 
+    cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS fee_payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        fee_plan_id INT NOT NULL,
+        student_id INT NOT NULL,
+        paid_amount INT NOT NULL,
+        paid_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        received_by_user_id INT NOT NULL,
+        note VARCHAR(255) NULL,
+        INDEX idx_student (student_id),
+        INDEX idx_plan (fee_plan_id),
+        CONSTRAINT fk_payment_plan FOREIGN KEY (fee_plan_id) REFERENCES fee_plans(id) ON DELETE CASCADE,
+        CONSTRAINT fk_payment_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+        CONSTRAINT fk_payment_receiver FOREIGN KEY (received_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      """
+    )
 
 
 

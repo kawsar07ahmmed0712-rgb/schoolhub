@@ -1,0 +1,14 @@
+<h2>Fees Setup (Admin)</h2>
+<p>Logged in as: {{ phone }}</p>
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+<form method="POST">
+  <p>Class No: <input name="class_no" /></p>
+  <p>Section (A/B): <input name="section" value="A" /></p>
+  <p>Academic Year: <input name="academic_year" value="{{ 2026 }}" /></p>
+  <p>Month (1-12): <input name="fee_month" /></p>
+  <p>Amount: <input name="amount" /></p>
+  <button type="submit">Save</button>
+</form>
+
+<p><a href="/dashboard/admin/">← Back to Dashboard</a></p>

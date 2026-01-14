@@ -9,6 +9,13 @@ from werkzeug.utils import secure_filename
 import io
 
 from services.notices_service import list_notices, create_notice, delete_notice
+from services.fees_service import (
+  create_fee_plan,
+  list_fee_plans_for_class,
+  get_student_id_by_phone,
+  record_payment,
+  get_fee_status_for_student,
+)
 
 
 
@@ -339,6 +346,60 @@ def notice_delete(role, notice_id):
     requester_user_id=int(requester_user_id),
   )
   return redirect(url_for("notices", role=role))
+
+
+
+
+
+
+
+
+@app.get("/dashboard/student/fees")
+def student_fees():
+  if session.get("role") != "student":
+    return redirect(url_for("login", role="student"))
+
+  profile = fetch_role_profile(session.get("user_id"), "student")
+  if not profile or "class_no" not in profile:
+    return render_template("fees.html", role="student", phone=session.get("phone"), rows=[], message="Class not assigned yet.")
+
+  student_user_id = session.get("user_id")
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute("SELECT id FROM students WHERE user_id=%s", (student_user_id,))
+    s = cur.fetchone()
+    if not s:
+      return render_template("fees.html", role="student", phone=session.get("phone"), rows=[], message="Student profile not found.")
+    student_id = s["id"]
+  finally:
+    cur.close()
+    conn.close()
+
+  academic_year = datetime.now().year
+  rows = get_fee_status_for_student(
+    student_id=student_id,
+    class_no=int(profile["class_no"]),
+    section=str(profile["section"]),
+    academic_year=academic_year,
+  )
+
+  return render_template("fees.html", role="student", phone=session.get("phone"), rows=rows, academic_year=academic_year)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1584,6 +1645,70 @@ def admin_today_logs_clear():
 
     return redirect(url_for("admin_schedule_upload", msg="✅ Today's teacher lesson logs cleared."))
 
+
+@app.get("/dashboard/admin/fees_setup")
+def admin_fees_setup():
+  if session.get("role") != "admin":
+    return redirect(url_for("login", role="admin"))
+  return render_template("fees_setup.html", role="admin", phone=session.get("phone"))
+
+@app.post("/dashboard/admin/fees_setup")
+def admin_fees_setup_post():
+  if session.get("role") != "admin":
+    return redirect(url_for("login", role="admin"))
+
+  try:
+    class_no = int(request.form.get("class_no", "0"))
+    section = request.form.get("section", "A").strip()
+    academic_year = int(request.form.get("academic_year", str(datetime.now().year)))
+    fee_month = int(request.form.get("fee_month", "0"))
+    amount = int(request.form.get("amount", "0"))
+
+    create_fee_plan(class_no, section, academic_year, fee_month, amount)
+    return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message="✅ Fee plan saved!")
+  except ValueError as e:
+    return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message=f"❌ {e}")
+
+
+@app.get("/dashboard/admin/payments")
+def admin_payments():
+  if session.get("role") != "admin":
+    return redirect(url_for("login", role="admin"))
+  return render_template("payments.html", role="admin", phone=session.get("phone"))
+
+@app.post("/dashboard/admin/payments")
+def admin_payments_post():
+  if session.get("role") != "admin":
+    return redirect(url_for("login", role="admin"))
+
+  try:
+    student_phone = request.form.get("student_phone", "").strip()
+    class_no = int(request.form.get("class_no", "0"))
+    section = request.form.get("section", "A").strip()
+    academic_year = int(request.form.get("academic_year", str(datetime.now().year)))
+    fee_month = int(request.form.get("fee_month", "0"))
+    paid_amount = int(request.form.get("paid_amount", "0"))
+    note = request.form.get("note", "")
+
+    student_id = get_student_id_by_phone(student_phone)
+    if not student_id:
+      raise ValueError("Student not found for this phone.")
+
+    plans = list_fee_plans_for_class(class_no, section, academic_year)
+    plan = next((p for p in plans if int(p["fee_month"]) == fee_month), None)
+    if not plan:
+      raise ValueError("Fee plan not found. Set fee plan first.")
+
+    record_payment(
+      fee_plan_id=int(plan["id"]),
+      student_id=int(student_id),
+      paid_amount=paid_amount,
+      received_by_user_id=int(session.get("user_id")),
+      note=note,
+    )
+    return render_template("payments.html", role="admin", phone=session.get("phone"), message="✅ Payment recorded!")
+  except ValueError as e:
+    return render_template("payments.html", role="admin", phone=session.get("phone"), message=f"❌ {e}")
 
 
 
