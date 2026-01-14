@@ -1,0 +1,87 @@
+{% set page_title = "Approvals" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1300px;">
+    <section class="card card-pad">
+      <h1>Approvals</h1>
+      <p class="muted">Approve/reject leave requests across the school.</p>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Filter</h2>
+      <form method="get" action="{{ url_for('head_approvals') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-2">
+          <div>
+            <label>Status</label>
+            <select name="status">
+              <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+              <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
+              <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Approved</option>
+              <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a class="btn btn-ghost" href="{{ url_for('head_approvals') }}">Reset</a>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      {% if rows|length == 0 %}
+        <p class="muted">No leave requests found.</p>
+      {% else %}
+        <div style="overflow:auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Phone</th>
+                <th>Class</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.student_name }}</td>
+                  <td>{{ r.student_phone }}</td>
+                  <td>{{ r.class_label }}</td>
+                  <td>{{ r.from_date }}</td>
+                  <td>{{ r.to_date }}</td>
+                  <td><strong>{{ r.status|upper }}</strong></td>
+                  <td style="white-space: pre-wrap;">{{ r.reason }}</td>
+                  <td>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                      <form method="post" action="{{ url_for('head_approvals_decide') }}">
+                        <input type="hidden" name="leave_id" value="{{ r.id }}" />
+                        <input type="hidden" name="status" value="approved" />
+                        <button class="btn btn-ghost" type="submit">Approve</button>
+                      </form>
+                      <form method="post" action="{{ url_for('head_approvals_decide') }}">
+                        <input type="hidden" name="leave_id" value="{{ r.id }}" />
+                        <input type="hidden" name="status" value="rejected" />
+                        <button class="btn btn-ghost" type="submit">Reject</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/head/">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

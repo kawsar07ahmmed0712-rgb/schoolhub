@@ -1,0 +1,83 @@
+{% set page_title = "Results Publish" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Results Publish</h1>
+      <p class="muted">Create exams and publish/unpublish results per class/section.</p>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Exams</h2>
+      <form method="post" action="{{ url_for('head_results_exam_create') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-2">
+          <div>
+            <label>New exam name</label>
+            <input name="name" placeholder="e.g. Final" required />
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button class="btn btn-primary" type="submit">Create Exam</button>
+          </div>
+        </div>
+      </form>
+
+      <form method="get" action="{{ url_for('head_results') }}" class="form-row" style="margin-top: 12px;">
+        <div class="grid grid-2">
+          <div>
+            <label>Select exam</label>
+            <select name="exam_id">
+              <option value="">Select...</option>
+              {% for e in exams %}
+                <option value="{{ e.id }}" {% if selected_exam_id == e.id %}selected{% endif %}>{{ e.name }} ({{ e.academic_year }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="btn" type="submit">Load</button>
+            <a class="btn btn-ghost" href="{{ url_for('head_results') }}">Reset</a>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      {% if not selected_exam_id %}
+        <p class="muted">Select an exam to manage publications.</p>
+      {% else %}
+        <h2>Publish per class/section</h2>
+        <div class="grid grid-2" style="margin-top: 10px;">
+          {% for c in classes %}
+            <div class="card card-pad" style="box-shadow:none;">
+              <div style="font-weight: 760;">Class {{ c.class_no }} - {{ c.section }}</div>
+              <div class="muted" style="font-size: 12px; margin-top: 2px;">
+                Status: <strong>{% if c.is_published %}PUBLISHED{% else %}HIDDEN{% endif %}</strong>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
+                <form method="post" action="{{ url_for('head_results_publish') }}">
+                  <input type="hidden" name="exam_id" value="{{ selected_exam_id }}" />
+                  <input type="hidden" name="class_no" value="{{ c.class_no }}" />
+                  <input type="hidden" name="section" value="{{ c.section }}" />
+                  <input type="hidden" name="is_published" value="1" />
+                  <button class="btn btn-ghost" type="submit">Publish</button>
+                </form>
+                <form method="post" action="{{ url_for('head_results_publish') }}">
+                  <input type="hidden" name="exam_id" value="{{ selected_exam_id }}" />
+                  <input type="hidden" name="class_no" value="{{ c.class_no }}" />
+                  <input type="hidden" name="section" value="{{ c.section }}" />
+                  <input type="hidden" name="is_published" value="0" />
+                  <button class="btn btn-ghost" type="submit">Unpublish</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/head/">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

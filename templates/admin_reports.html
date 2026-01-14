@@ -1,0 +1,52 @@
+{% set page_title = "Reports" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Reports (Admin)</h1>
+      <p class="muted">High-level stats from the database.</p>
+    </section>
+
+    <section class="grid grid-3">
+      <div class="card card-pad">
+        <div class="muted">Users</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.users_total }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Students</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.students_total }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Teachers</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.teachers_total }}</div>
+      </div>
+    </section>
+
+    <section class="grid grid-3">
+      <div class="card card-pad">
+        <div class="muted">Notices</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.notices_total }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Payments (rows)</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.payments_total }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Leave requests (pending)</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.leaves_pending }}</div>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Notes</h2>
+      <p class="muted">
+        This page is read-only and meant for quick verification during interviews.
+      </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
+        <a class="btn btn-primary" href="/dashboard/admin/">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

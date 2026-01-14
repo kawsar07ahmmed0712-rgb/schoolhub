@@ -24,6 +24,21 @@ from services.fees_service import (
   get_payment_receipt_admin,
   get_payment_receipt_student,
 )
+from services.results_service import (
+  list_exams,
+  create_exam,
+  upsert_marks_bulk,
+  get_marks_for_class_exam,
+  set_publication,
+  list_published_exams_for_student,
+  get_student_result,
+)
+from services.leaves_service import (
+  create_leave_request,
+  list_student_leave_requests,
+  list_teacher_pending_leaves,
+  decide_leave_request,
+)
 
 
 
@@ -219,6 +234,7 @@ ROLE_PAGES = {
         ("payments", "My Payments"),
         ("results", "Results"),
         ("attendance", "Attendance & Leave"),
+        ("leaves", "Leave Requests"),
         ("notices", "Notices"),
         ("routine", "Routine"),
     ],
@@ -266,8 +282,10 @@ def build_nav_links(role: str) -> dict:
       {
         "fees": url_for("student_fees"),
         "payments": url_for("student_payments_history"),
+        "results": url_for("student_results"),
         "attendance": url_for("student_attendance"),
         "routine": url_for("student_routine"),
+        "leaves": url_for("student_leaves"),
       }
     )
   elif role == "teacher":
@@ -278,6 +296,8 @@ def build_nav_links(role: str) -> dict:
         "today_schedule": url_for("teacher_today_schedule"),
         "weekly_schedule": url_for("teacher_weekly_schedule"),
         "daily_class": url_for("teacher_daily_class"),
+        "marks": url_for("teacher_marks"),
+        "leaves": url_for("teacher_leaves"),
       }
     )
   elif role == "head":
@@ -285,6 +305,9 @@ def build_nav_links(role: str) -> dict:
       {
         "today_overview": url_for("head_today_overview"),
         "teachers": url_for("head_teachers"),
+        "results": url_for("head_results"),
+        "approvals": url_for("head_approvals"),
+        "reports": url_for("head_reports"),
       }
     )
   elif role == "admin":
@@ -295,6 +318,8 @@ def build_nav_links(role: str) -> dict:
         "fees_setup": url_for("admin_fees_setup"),
         "payments": url_for("admin_payments"),
         "payments_history": url_for("admin_payments_history"),
+        "timetable": url_for("admin_timetable"),
+        "reports": url_for("admin_reports"),
         "schedule_upload": url_for("admin_schedule_upload"),
       }
     )
@@ -712,6 +737,224 @@ def teacher_students(role):
         conn.close()
 
 
+@app.get("/dashboard/teacher/marks")
+def teacher_marks():
+    if session.get("role") != "teacher":
+        return redirect(url_for("login", role="teacher"))
+
+    academic_year = get_academic_year()
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id FROM teachers WHERE user_id=%s", (session.get("user_id"),))
+        t = cursor.fetchone()
+        if not t:
+            return render_template(
+                "teacher_marks.html",
+                academic_year=academic_year,
+                class_no="-",
+                section="-",
+                exams=[],
+                selected_exam_id=None,
+                subject="",
+                max_marks=100,
+                students=[],
+                existing_marks={},
+                message="Teacher profile not found in DB.",
+            )
+
+        teacher_id = int(t["id"])
+        cursor.execute(
+            """
+            SELECT class_no, section
+            FROM class_teacher_assignments
+            WHERE teacher_id=%s
+            ORDER BY academic_year DESC, id DESC
+            LIMIT 1
+            """,
+            (teacher_id,),
+        )
+        a = cursor.fetchone()
+        if not a:
+            return render_template(
+                "teacher_marks.html",
+                academic_year=academic_year,
+                class_no="-",
+                section="-",
+                exams=[],
+                selected_exam_id=None,
+                subject="",
+                max_marks=100,
+                students=[],
+                existing_marks={},
+                message="Class teacher assignment not found.",
+            )
+
+        class_no = int(a["class_no"])
+        section = str(a["section"])
+        table = class_table_name(class_no, section)
+
+        exams = list_exams(academic_year=academic_year)
+
+        selected_exam_id = request.args.get("exam_id", "").strip()
+        subject = (request.args.get("subject") or "").strip()
+        max_marks_raw = (request.args.get("max_marks") or "100").strip()
+
+        exam_id_int = None
+        if selected_exam_id:
+            try:
+                exam_id_int = int(selected_exam_id)
+            except Exception:
+                exam_id_int = None
+
+        try:
+            max_marks = float(max_marks_raw)
+        except Exception:
+            max_marks = 100.0
+
+        cursor.execute(
+            f"""
+            SELECT c.roll, s.id AS student_id, s.name, u.phone
+            FROM `{table}` c
+            JOIN students s ON s.id = c.student_id
+            JOIN users u ON u.id = s.user_id
+            ORDER BY c.roll ASC
+            """
+        )
+        students = cursor.fetchall() or []
+
+        existing_marks = {}
+        if exam_id_int and subject:
+            existing_marks = get_marks_for_class_exam(exam_id=exam_id_int, class_no=class_no, section=section, subject=subject)
+
+        return render_template(
+            "teacher_marks.html",
+            academic_year=academic_year,
+            class_no=class_no,
+            section=section,
+            exams=exams,
+            selected_exam_id=exam_id_int,
+            subject=subject,
+            max_marks=max_marks,
+            students=students,
+            existing_marks=existing_marks,
+            message=request.args.get("msg"),
+        )
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.post("/dashboard/teacher/marks/exams")
+def teacher_marks_exam_create():
+    if session.get("role") != "teacher":
+        return redirect(url_for("login", role="teacher"))
+
+    academic_year = get_academic_year()
+    name = request.form.get("name", "")
+    try:
+        exam_id = create_exam(academic_year=academic_year, name=name)
+        return redirect(url_for("teacher_marks", exam_id=exam_id, msg="Exam created."))
+    except ValueError as e:
+        return redirect(url_for("teacher_marks", msg=str(e)))
+
+
+@app.post("/dashboard/teacher/marks/save")
+def teacher_marks_save():
+    if session.get("role") != "teacher":
+        return redirect(url_for("login", role="teacher"))
+
+    exam_id = int(request.form.get("exam_id", "0") or "0")
+    subject = (request.form.get("subject") or "").strip()
+    max_marks_raw = (request.form.get("max_marks") or "100").strip()
+    try:
+        max_marks = float(max_marks_raw)
+    except Exception:
+        max_marks = 100.0
+
+    # Find assigned class/section
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id FROM teachers WHERE user_id=%s", (session.get("user_id"),))
+        t = cursor.fetchone()
+        if not t:
+            return redirect(url_for("teacher_marks", msg="Teacher profile not found."))
+        teacher_id = int(t["id"])
+
+        cursor.execute(
+            """
+            SELECT class_no, section
+            FROM class_teacher_assignments
+            WHERE teacher_id=%s
+            ORDER BY academic_year DESC, id DESC
+            LIMIT 1
+            """,
+            (teacher_id,),
+        )
+        a = cursor.fetchone()
+        if not a:
+            return redirect(url_for("teacher_marks", msg="Class teacher assignment not found."))
+        class_no = int(a["class_no"])
+        section = str(a["section"])
+    finally:
+        cursor.close()
+        conn.close()
+
+    marks_by_student_id = {}
+    for k, v in request.form.items():
+        if not k.startswith("mark_"):
+            continue
+        sid = k.replace("mark_", "").strip()
+        if sid == "":
+            continue
+        if (v or "").strip() == "":
+            continue
+        try:
+            marks_by_student_id[int(sid)] = float(v)
+        except Exception:
+            continue
+
+    try:
+        count = upsert_marks_bulk(
+            exam_id=exam_id,
+            class_no=class_no,
+            section=section,
+            subject=subject,
+            max_marks=max_marks,
+            marks_by_student_id=marks_by_student_id,
+            entered_by_user_id=int(session.get("user_id")),
+        )
+        return redirect(url_for("teacher_marks", exam_id=exam_id, subject=subject, max_marks=max_marks, msg=f"Saved marks for {count} students."))
+    except ValueError as e:
+        return redirect(url_for("teacher_marks", exam_id=exam_id, subject=subject, max_marks=max_marks, msg=str(e)))
+
+
+@app.get("/dashboard/teacher/leaves")
+def teacher_leaves():
+    if session.get("role") != "teacher":
+        return redirect(url_for("login", role="teacher"))
+
+    academic_year = get_academic_year()
+    rows = list_teacher_pending_leaves(teacher_user_id=int(session.get("user_id")), academic_year=academic_year, limit=300)
+    return render_template("teacher_leaves.html", rows=rows, message=request.args.get("msg"))
+
+
+@app.post("/dashboard/teacher/leaves/decide")
+def teacher_leave_decide():
+    if session.get("role") != "teacher":
+        return redirect(url_for("login", role="teacher"))
+
+    leave_id = int(request.form.get("leave_id", "0") or "0")
+    status = (request.form.get("status") or "").strip()
+    try:
+        decide_leave_request(leave_id=leave_id, status=status, decided_by_user_id=int(session.get("user_id")))
+        return redirect(url_for("teacher_leaves", msg="Decision saved."))
+    except ValueError as e:
+        return redirect(url_for("teacher_leaves", msg=str(e)))
+
+
 @app.route("/dashboard/<role>/attendance", methods=["GET", "POST"])
 def teacher_attendance(role):
     role = normalize_role(role)
@@ -1033,8 +1276,78 @@ def student_routine():
         conn.close()
 
 
- ########################################### TEACHER PART TEACHER PART TEACHER PART ########################################
-@app.get("/dashboard/teacher/daily-class")
+@app.get("/dashboard/student/results")
+def student_results():
+    if session.get("role") != "student":
+        return redirect(url_for("login", role="student"))
+
+    user_id = session.get("user_id")
+    if user_id is None:
+        return redirect(url_for("login", role="student"))
+
+    student_id = get_student_id_by_user_id(int(user_id))
+    if not student_id:
+        return render_template(
+            "student_results.html",
+            exams=[],
+            selected_exam_id=None,
+            result={"rows": [], "total": 0, "max_total": 0, "published": False},
+            message="Student profile not found.",
+        )
+
+    exams = list_published_exams_for_student(student_id=student_id)
+
+    selected_exam_id = request.args.get("exam_id", "").strip()
+    exam_id_int = None
+    if selected_exam_id:
+        try:
+            exam_id_int = int(selected_exam_id)
+        except Exception:
+            exam_id_int = None
+
+    result = {"rows": [], "total": 0, "max_total": 0, "published": False}
+    if exam_id_int:
+        result = get_student_result(exam_id=exam_id_int, student_id=student_id)
+
+    return render_template(
+        "student_results.html",
+        exams=exams,
+        selected_exam_id=exam_id_int,
+        result=result,
+        message=request.args.get("msg"),
+    )
+
+
+@app.route("/dashboard/student/leaves", methods=["GET", "POST"])
+def student_leaves():
+    if session.get("role") != "student":
+        return redirect(url_for("login", role="student"))
+
+    user_id = session.get("user_id")
+    if user_id is None:
+        return redirect(url_for("login", role="student"))
+
+    student_id = get_student_id_by_user_id(int(user_id))
+    if not student_id:
+        return render_template("student_leaves.html", rows=[], message="Student profile not found."), 400
+
+    if request.method == "POST":
+        from_date = request.form.get("from_date", "").strip()
+        to_date = request.form.get("to_date", "").strip()
+        reason = request.form.get("reason", "").strip()
+        try:
+            create_leave_request(student_id=student_id, from_date=from_date, to_date=to_date, reason=reason)
+            return redirect(url_for("student_leaves", msg="Leave request submitted."))
+        except ValueError as e:
+            rows = list_student_leave_requests(student_id=student_id)
+            return render_template("student_leaves.html", rows=rows, message=str(e)), 400
+
+    rows = list_student_leave_requests(student_id=student_id)
+    return render_template("student_leaves.html", rows=rows, message=request.args.get("msg"))
+
+
+########################################### TEACHER PART TEACHER PART TEACHER PART ########################################
+@app.route("/dashboard/teacher/daily-class", methods=["GET", "POST"])
 def teacher_daily_class():
     # Only logged-in teachers can access
     if session.get("role") != "teacher":
@@ -1086,6 +1399,49 @@ def teacher_daily_class():
         class_no = int(a["class_no"])
         section = a["section"]  # 'A' or 'B'
 
+        if request.method == "POST":
+            try:
+                period_no = int(request.form.get("period_no", "0"))
+            except Exception:
+                period_no = 0
+            if period_no < 1 or period_no > 6:
+                return redirect(url_for("teacher_daily_class"))
+
+            topic = (request.form.get("topic") or "").strip()[:255]
+            homework = (request.form.get("homework") or "").strip()
+            notes = (request.form.get("notes") or "").strip()
+
+            cursor.execute(
+                """
+                INSERT INTO daily_class_days (teacher_id, class_no, section, log_date)
+                VALUES (%s,%s,%s,%s)
+                ON DUPLICATE KEY UPDATE
+                  class_no=VALUES(class_no),
+                  section=VALUES(section)
+                """,
+                (teacher_id, class_no, section, today),
+            )
+            cursor.execute(
+                "SELECT id FROM daily_class_days WHERE teacher_id=%s AND log_date=%s LIMIT 1",
+                (teacher_id, today),
+            )
+            day_id = int(cursor.fetchone()["id"])
+
+            cursor.execute(
+                """
+                INSERT INTO daily_class_periods (day_id, period_no, topic, homework, notes)
+                VALUES (%s,%s,%s,%s,%s)
+                ON DUPLICATE KEY UPDATE
+                  topic=VALUES(topic),
+                  homework=VALUES(homework),
+                  notes=VALUES(notes)
+                """,
+                (day_id, period_no, topic, homework, notes),
+            )
+
+            conn.commit()
+            return redirect(url_for("teacher_daily_class", saved="1"))
+
         # 3) Find today’s day container (if exists)
         cursor.execute(
             """
@@ -1131,7 +1487,7 @@ def teacher_daily_class():
             class_no=class_no,
             section=section,
             periods=periods,
-            message=None,
+            message="Saved." if request.args.get("saved") == "1" else None,
         )
     finally:
         cursor.close()
@@ -1581,6 +1937,233 @@ def teacher_weekly_schedule():
 
 ########################################### HEAD TEACHER PART - HEAD TEACHER PART - HEAD TEACHER PART - HEAD TEACHER PART ########################################
 
+@app.get("/dashboard/head/approvals")
+def head_approvals():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    selected_status = (request.args.get("status") or "pending").strip().lower()
+    if selected_status not in {"pending", "approved", "rejected", "all"}:
+        selected_status = "pending"
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        sql = """
+          SELECT
+            lr.id,
+            lr.student_id,
+            s.name AS student_name,
+            u.phone AS student_phone,
+            lr.from_date,
+            lr.to_date,
+            lr.reason,
+            lr.status
+          FROM leave_requests lr
+          JOIN students s ON s.id = lr.student_id
+          JOIN users u ON u.id = s.user_id
+          WHERE 1=1
+        """
+        params = []
+        if selected_status != "all":
+            sql += " AND lr.status=%s"
+            params.append(selected_status)
+        sql += " ORDER BY lr.created_at DESC, lr.id DESC LIMIT 500"
+
+        cursor.execute(sql, tuple(params))
+        rows = cursor.fetchall() or []
+
+        def find_class_label(student_id: int) -> str:
+            for class_no in range(1, 11):
+                for section_letter, section_code in (("A", "01"), ("B", "02")):
+                    table = f"class_{class_no:02d}_section_{section_code}"
+                    try:
+                        cursor.execute(f"SELECT 1 FROM `{table}` WHERE student_id=%s LIMIT 1", (student_id,))
+                        if cursor.fetchone():
+                            return f"{class_no}-{section_letter}"
+                    except Exception:
+                        continue
+            return "-"
+
+        for r in rows:
+            r["class_label"] = find_class_label(int(r["student_id"]))
+
+        return render_template(
+            "head_approvals.html",
+            rows=rows,
+            selected_status=selected_status,
+            message=request.args.get("msg"),
+        )
+    except Exception:
+        app.logger.exception("head_approvals failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` to create required tables, then refresh this page.",
+            role="head",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.post("/dashboard/head/approvals/decide")
+def head_approvals_decide():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    leave_id = int(request.form.get("leave_id", "0") or "0")
+    status = (request.form.get("status") or "").strip()
+    try:
+        decide_leave_request(leave_id=leave_id, status=status, decided_by_user_id=int(session.get("user_id")))
+        return redirect(url_for("head_approvals", msg="Decision saved."))
+    except ValueError as e:
+        return redirect(url_for("head_approvals", msg=str(e)))
+
+
+@app.get("/dashboard/head/results")
+def head_results():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    academic_year = get_academic_year()
+    exams = list_exams(academic_year=academic_year)
+
+    selected_exam_id = request.args.get("exam_id", "").strip()
+    exam_id_int = None
+    if selected_exam_id:
+        try:
+            exam_id_int = int(selected_exam_id)
+        except Exception:
+            exam_id_int = None
+
+    pub_map = {}
+    if exam_id_int:
+        conn = connect_db()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                "SELECT class_no, section, is_published FROM exam_publications WHERE exam_id=%s",
+                (exam_id_int,),
+            )
+            for r in cursor.fetchall() or []:
+                pub_map[(int(r["class_no"]), str(r["section"]))] = int(r.get("is_published") or 0) == 1
+        except Exception:
+            pub_map = {}
+        finally:
+            cursor.close()
+            conn.close()
+
+    classes = []
+    for class_no in range(1, 11):
+        for sec in ("A", "B"):
+            classes.append(
+                {
+                    "class_no": class_no,
+                    "section": sec,
+                    "is_published": bool(pub_map.get((class_no, sec), False)),
+                }
+            )
+
+    return render_template(
+        "head_results.html",
+        exams=exams,
+        selected_exam_id=exam_id_int,
+        classes=classes,
+        message=request.args.get("msg"),
+    )
+
+
+@app.get("/dashboard/head/reports")
+def head_reports():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    today = str(date.today())
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT COUNT(*) AS c FROM teacher_lesson_logs WHERE log_date=%s", (today,))
+        today_logs_total = int((cursor.fetchone() or {}).get("c") or 0)
+        cursor.execute("SELECT COUNT(*) AS c FROM teacher_lesson_logs WHERE log_date=%s AND is_done=1", (today,))
+        today_logs_done = int((cursor.fetchone() or {}).get("c") or 0)
+
+        cursor.execute("SELECT COUNT(*) AS c FROM attendance_sessions")
+        attendance_sessions_total = int((cursor.fetchone() or {}).get("c") or 0)
+
+        cursor.execute("SELECT COUNT(*) AS c FROM leave_requests WHERE status='pending'")
+        leaves_pending = int((cursor.fetchone() or {}).get("c") or 0)
+
+        cursor.execute("SELECT COUNT(*) AS c FROM exams")
+        exams_total = int((cursor.fetchone() or {}).get("c") or 0)
+
+        cursor.execute("SELECT COUNT(*) AS c FROM exam_publications WHERE is_published=1")
+        publications_published = int((cursor.fetchone() or {}).get("c") or 0)
+
+        return render_template(
+            "head_reports.html",
+            stats={
+                "today_logs_total": today_logs_total,
+                "today_logs_done": today_logs_done,
+                "attendance_sessions_total": attendance_sessions_total,
+                "leaves_pending": leaves_pending,
+                "exams_total": exams_total,
+                "publications_published": publications_published,
+            },
+            message=request.args.get("msg"),
+        )
+    except Exception:
+        app.logger.exception("head_reports failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` to create required tables, then refresh this page.",
+            role="head",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.post("/dashboard/head/results/exams")
+def head_results_exam_create():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    academic_year = get_academic_year()
+    name = request.form.get("name", "")
+    try:
+        exam_id = create_exam(academic_year=academic_year, name=name)
+        return redirect(url_for("head_results", exam_id=exam_id, msg="Exam created."))
+    except ValueError as e:
+        return redirect(url_for("head_results", msg=str(e)))
+
+
+@app.post("/dashboard/head/results/publish")
+def head_results_publish():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    exam_id = int(request.form.get("exam_id", "0") or "0")
+    class_no = int(request.form.get("class_no", "0") or "0")
+    section = (request.form.get("section") or "").strip()
+    is_published = (request.form.get("is_published") or "0").strip() == "1"
+
+    try:
+        set_publication(
+            exam_id=exam_id,
+            class_no=class_no,
+            section=section,
+            is_published=is_published,
+            published_by_user_id=int(session.get("user_id")),
+        )
+        return redirect(url_for("head_results", exam_id=exam_id, msg="Publication updated."))
+    except ValueError as e:
+        return redirect(url_for("head_results", exam_id=exam_id, msg=str(e)))
+
+
 @app.get("/dashboard/head/teachers")
 def head_teachers():
     if session.get("role") != "head":
@@ -1859,6 +2442,123 @@ def head_today_overview():
 
 
 ################################################ ADMIN PART ADMIN PART ADMIN PART ADMIN PART #############################################
+@app.get("/dashboard/admin/timetable")
+def admin_timetable():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    class_no_raw = (request.args.get("class_no") or "1").strip()
+    section = (request.args.get("section") or "A").strip().upper()
+    try:
+        class_no = int(class_no_raw)
+    except Exception:
+        class_no = 1
+
+    if class_no < 1 or class_no > 10:
+        class_no = 1
+    if section not in {"A", "B"}:
+        section = "A"
+
+    days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+    periods = [1, 2, 3, 4, 5, 6]
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """
+            SELECT
+              s.weekday,
+              s.period_no,
+              t.name AS teacher_name,
+              u.phone AS teacher_phone
+            FROM teacher_schedule_slots s
+            JOIN teachers t ON t.id = s.teacher_id
+            JOIN users u ON u.id = t.user_id
+            WHERE s.class_no=%s AND s.section=%s
+            ORDER BY FIELD(s.weekday,'sun','mon','tue','wed','thu','fri','sat'), s.period_no
+            """,
+            (class_no, section),
+        )
+        rows = cursor.fetchall() or []
+
+        grid = {}
+        for r in rows:
+            key = f"{r['weekday']}-{int(r['period_no'])}"
+            grid[key] = {"teacher_name": r.get("teacher_name") or "-", "teacher_phone": r.get("teacher_phone") or "-"}
+
+        message = None if rows else "No timetable found. Upload/import schedule first."
+
+        return render_template(
+            "admin_timetable.html",
+            selected={"class_no": class_no, "section": section},
+            days=days,
+            periods=periods,
+            grid=grid,
+            message=message,
+        )
+    except Exception:
+        app.logger.exception("admin_timetable failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` and import schedule, then refresh this page.",
+            role="admin",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.get("/dashboard/admin/reports")
+def admin_reports():
+    if session.get("role") != "admin":
+        return redirect(url_for("login", role="admin"))
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT COUNT(*) AS c FROM users")
+        users_total = int((cursor.fetchone() or {}).get("c") or 0)
+        cursor.execute("SELECT COUNT(*) AS c FROM students")
+        students_total = int((cursor.fetchone() or {}).get("c") or 0)
+        cursor.execute("SELECT COUNT(*) AS c FROM teachers")
+        teachers_total = int((cursor.fetchone() or {}).get("c") or 0)
+
+        cursor.execute("SELECT COUNT(*) AS c FROM notices")
+        notices_total = int((cursor.fetchone() or {}).get("c") or 0)
+        cursor.execute("SELECT COUNT(*) AS c FROM fee_payments")
+        payments_total = int((cursor.fetchone() or {}).get("c") or 0)
+        cursor.execute("SELECT COUNT(*) AS c FROM leave_requests WHERE status='pending'")
+        leaves_pending = int((cursor.fetchone() or {}).get("c") or 0)
+
+        return render_template(
+            "admin_reports.html",
+            stats={
+                "users_total": users_total,
+                "students_total": students_total,
+                "teachers_total": teachers_total,
+                "notices_total": notices_total,
+                "payments_total": payments_total,
+                "leaves_pending": leaves_pending,
+            },
+            message=request.args.get("msg"),
+        )
+    except Exception:
+        app.logger.exception("admin_reports failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` to create required tables, then refresh this page.",
+            role="admin",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 @app.route("/dashboard/admin/settings", methods=["GET", "POST"])
 def admin_settings():
     if session.get("role") != "admin":
@@ -2028,7 +2728,7 @@ def admin_schedule_upload():
             report = import_teacher_schedule_csv_to_db(save_path, dry_run=dry_run)
             message = "Import completed."
         except Exception as e:
-            message = f"❌ Import failed: {e}"
+            message = f"Import failed: {e}"
 
     stats = get_schedule_stats()
     return render_template("admin_schedule_upload.html", report=report, message=message, stats=stats)
@@ -2067,7 +2767,7 @@ def admin_schedule_clear():
 
     # Strong safety check
     if (not confirm) or (confirm_text != "DELETE"):
-        return redirect(url_for("admin_schedule_upload", msg="❌ Not cleared. Please check confirm and type DELETE."))
+        return redirect(url_for("admin_schedule_upload", msg="Not cleared. Please check confirm and type DELETE."))
 
     conn = connect_db()
     cursor = conn.cursor()
@@ -2091,9 +2791,7 @@ def admin_today_logs_clear():
     confirm_text = (request.form.get("confirm_text") or "").strip().upper()
 
     if (not confirm) or (confirm_text != "CLEAR TODAY"):
-        return redirect(
-            url_for("admin_schedule_upload", msg="❌ Not cleared. Please check confirm and type CLEAR TODAY.")
-        )
+        return redirect(url_for("admin_schedule_upload", msg="Not cleared. Please check confirm and type CLEAR TODAY."))
 
     today = str(date.today())
 
@@ -2113,7 +2811,7 @@ def admin_today_logs_clear():
 def admin_fees_setup():
   if session.get("role") != "admin":
     return redirect(url_for("login", role="admin"))
-  return render_template("fees_setup.html", role="admin", phone=session.get("phone"))
+  return render_template("fees_setup.html", role="admin", phone=session.get("phone"), academic_year=get_academic_year())
 
 @app.post("/dashboard/admin/fees_setup")
 def admin_fees_setup_post():
@@ -2130,14 +2828,14 @@ def admin_fees_setup_post():
     create_fee_plan(class_no, section, academic_year, fee_month, amount)
     return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message="Fee plan saved!")
   except ValueError as e:
-    return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message=f"❌ {e}")
+    return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message=f"{e}")
 
 
 @app.get("/dashboard/admin/payments")
 def admin_payments():
   if session.get("role") != "admin":
     return redirect(url_for("login", role="admin"))
-  return render_template("payments.html", role="admin", phone=session.get("phone"))
+  return render_template("payments.html", role="admin", phone=session.get("phone"), academic_year=get_academic_year())
 
 @app.post("/dashboard/admin/payments")
 def admin_payments_post():
@@ -2171,7 +2869,7 @@ def admin_payments_post():
     )
     return render_template("payments.html", role="admin", phone=session.get("phone"), message="Payment recorded!")
   except ValueError as e:
-    return render_template("payments.html", role="admin", phone=session.get("phone"), message=f"❌ {e}")
+    return render_template("payments.html", role="admin", phone=session.get("phone"), message=f"{e}")
 
 @app.get("/dashboard/admin/payments_history")
 def admin_payments_history():

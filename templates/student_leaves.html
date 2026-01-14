@@ -1,0 +1,68 @@
+{% set page_title = "Leave Requests" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1100px;">
+    <section class="card card-pad">
+      <h1>Leave Requests</h1>
+      <p class="muted">Submit a leave request and track approval status.</p>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Request leave</h2>
+      <form method="post" action="{{ url_for('student_leaves') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-2">
+          <div>
+            <label>From</label>
+            <input name="from_date" type="date" required />
+          </div>
+          <div>
+            <label>To</label>
+            <input name="to_date" type="date" required />
+          </div>
+        </div>
+        <div>
+          <label>Reason</label>
+          <textarea name="reason" rows="4" required></textarea>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Submit</button>
+          <a class="btn btn-ghost" href="/dashboard/student/">Back to Dashboard</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      <h2>My requests</h2>
+      {% if rows|length == 0 %}
+        <p class="muted">No leave requests yet.</p>
+      {% else %}
+        <table class="table" style="margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>From</th>
+              <th>To</th>
+              <th>Status</th>
+              <th>Requested</th>
+              <th>Decided</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td>{{ r.from_date }}</td>
+                <td>{{ r.to_date }}</td>
+                <td><strong>{{ r.status|upper }}</strong></td>
+                <td>{{ r.created_at }}</td>
+                <td>{{ r.decided_at or '-' }}</td>
+                <td style="white-space: pre-wrap;">{{ r.reason }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+

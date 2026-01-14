@@ -10,36 +10,47 @@
     </section>
 
     <section class="card card-pad">
-      <h2>Today's Periods (1–6)</h2>
-      {% if periods %}
-        <table class="table" style="margin-top: 10px;">
-          <thead>
-            <tr>
-              <th>Period</th>
-              <th>Topic</th>
-              <th>Homework</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in periods %}
-              <tr>
-                <td>{{ p.period_no }}</td>
-                <td>{{ p.topic }}</td>
-                <td style="white-space: pre-wrap;">{{ p.homework }}</td>
-                <td style="white-space: pre-wrap;">{{ p.notes }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="muted">No periods found for today.</p>
-      {% endif %}
+      <h2>Update periods (1–6)</h2>
+      <p class="muted">Fill topic/homework/notes and save per period.</p>
+
+      <div class="grid" style="margin-top: 12px;">
+        {% for p in periods %}
+          <div class="card card-pad" style="box-shadow:none;">
+            <div style="display:flex; justify-content: space-between; gap: 10px; align-items:center; flex-wrap: wrap;">
+              <div style="font-weight: 760;">Period {{ p.period_no }}</div>
+              <span class="badge">Save</span>
+            </div>
+
+            <form method="post" action="{{ url_for('teacher_daily_class') }}" class="form-row" style="margin-top: 10px;">
+              <input type="hidden" name="period_no" value="{{ p.period_no }}" />
+
+              <div>
+                <label>Topic</label>
+                <input name="topic" value="{{ p.topic }}" placeholder="e.g. Chapter 3: Algebra" />
+              </div>
+
+              <div class="grid grid-2">
+                <div>
+                  <label>Homework</label>
+                  <textarea name="homework" rows="4">{{ p.homework }}</textarea>
+                </div>
+                <div>
+                  <label>Notes</label>
+                  <textarea name="notes" rows="4">{{ p.notes }}</textarea>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Save Period {{ p.period_no }}</button>
+              </div>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
 
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
-        <a class="btn btn-primary" href="{{ url_for('dashboard', role='teacher') }}">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('dashboard', role='teacher') }}">Back to Dashboard</a>
       </div>
     </section>
   </div>
 {% endblock %}
-

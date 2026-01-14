@@ -1,0 +1,80 @@
+{% set page_title = "Timetable" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Timetable (Admin)</h1>
+      <p class="muted">View a class/section routine from uploaded teacher schedule slots.</p>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Select class</h2>
+      <form method="get" action="{{ url_for('admin_timetable') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-3">
+          <div>
+            <label>Class</label>
+            <select name="class_no">
+              {% for n in range(1, 11) %}
+                <option value="{{ n }}" {% if selected.class_no == n %}selected{% endif %}>{{ n }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label>Section</label>
+            <select name="section">
+              <option value="A" {% if selected.section == 'A' %}selected{% endif %}>A</option>
+              <option value="B" {% if selected.section == 'B' %}selected{% endif %}>B</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="btn btn-primary" type="submit">View</button>
+            <a class="btn btn-ghost" href="{{ url_for('admin_timetable') }}">Reset</a>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      {% if not days or not periods %}
+        <p class="muted">{{ message or "No timetable found." }}</p>
+      {% else %}
+        <div style="overflow:auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Day / Period</th>
+                {% for p in periods %}
+                  <th>P{{ p }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in days %}
+                <tr>
+                  <td><strong>{{ d|upper }}</strong></td>
+                  {% for p in periods %}
+                    {% set cell = grid.get(d ~ '-' ~ p|string) %}
+                    <td>
+                      {% if cell %}
+                        <div style="font-weight: 700;">{{ cell.teacher_name }}</div>
+                        <div class="muted" style="font-size: 12px;">{{ cell.teacher_phone }}</div>
+                      {% else %}
+                        <span class="muted">-</span>
+                      {% endif %}
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/admin/">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('admin_schedule_upload') }}">Schedule Upload</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

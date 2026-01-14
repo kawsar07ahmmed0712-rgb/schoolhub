@@ -1,0 +1,72 @@
+{% set page_title = "Results" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1100px;">
+    <section class="card card-pad">
+      <h1>Results</h1>
+      <p class="muted">Only published exams are visible to students.</p>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Select exam</h2>
+      <form method="get" action="{{ url_for('student_results') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-2">
+          <div>
+            <label>Exam</label>
+            <select name="exam_id">
+              <option value="">Select...</option>
+              {% for e in exams %}
+                <option value="{{ e.id }}" {% if selected_exam_id == e.id %}selected{% endif %}>
+                  {{ e.name }} ({{ e.academic_year }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="btn btn-primary" type="submit">View</button>
+            <a class="btn btn-ghost" href="{{ url_for('student_results') }}">Reset</a>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      {% if not selected_exam_id %}
+        <p class="muted">Pick an exam to view your marks.</p>
+      {% elif not result.published %}
+        <p class="muted">This exam is not published for your class yet.</p>
+      {% elif result.rows|length == 0 %}
+        <p class="muted">No marks found for you in this exam yet.</p>
+      {% else %}
+        <h2>Your marks</h2>
+        <table class="table" style="margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Marks</th>
+              <th>Max</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in result.rows %}
+              <tr>
+                <td>{{ r.subject }}</td>
+                <td><strong>{{ r.marks_obtained }}</strong></td>
+                <td>{{ r.max_marks }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="alert" style="margin-top: 12px;">
+          <strong>Total:</strong> {{ result.total }} / {{ result.max_total }}
+        </div>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/student/">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

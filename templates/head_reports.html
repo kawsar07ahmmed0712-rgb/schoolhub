@@ -1,0 +1,52 @@
+{% set page_title = "Reports" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Reports (Head)</h1>
+      <p class="muted">Quick school progress overview.</p>
+    </section>
+
+    <section class="grid grid-3">
+      <div class="card card-pad">
+        <div class="muted">Today logs (total)</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.today_logs_total }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Today logs (done)</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.today_logs_done }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Attendance sessions</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.attendance_sessions_total }}</div>
+      </div>
+    </section>
+
+    <section class="grid grid-3">
+      <div class="card card-pad">
+        <div class="muted">Leave requests (pending)</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.leaves_pending }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Exams</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.exams_total }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Published results</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ stats.publications_published }}</div>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Shortcuts</h2>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
+        <a class="btn" href="{{ url_for('head_today_overview') }}">Today's Overview</a>
+        <a class="btn" href="{{ url_for('head_results') }}">Results Publish</a>
+        <a class="btn" href="{{ url_for('head_approvals') }}">Approvals</a>
+        <a class="btn btn-primary" href="/dashboard/head/">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

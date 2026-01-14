@@ -173,6 +173,80 @@ def main():
       """
     )
 
+    # Results / marks
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS exams (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            academic_year INT NOT NULL,
+            name VARCHAR(60) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_exam (academic_year, name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS exam_publications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            exam_id INT NOT NULL,
+            class_no TINYINT NOT NULL,
+            section ENUM('A','B') NOT NULL,
+            is_published TINYINT(1) NOT NULL DEFAULT 0,
+            published_by_user_id INT NOT NULL,
+            published_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_pub (exam_id, class_no, section),
+            CONSTRAINT fk_pub_exam FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+            CONSTRAINT fk_pub_user FOREIGN KEY (published_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS marks (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            exam_id INT NOT NULL,
+            class_no TINYINT NOT NULL,
+            section ENUM('A','B') NOT NULL,
+            student_id INT NOT NULL,
+            subject VARCHAR(60) NOT NULL,
+            marks_obtained DECIMAL(5,2) NOT NULL,
+            max_marks DECIMAL(5,2) NOT NULL DEFAULT 100,
+            entered_by_user_id INT NOT NULL,
+            entered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_mark (exam_id, class_no, section, student_id, subject),
+            INDEX idx_student (student_id),
+            INDEX idx_exam (exam_id),
+            CONSTRAINT fk_mark_exam FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+            CONSTRAINT fk_mark_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+            CONSTRAINT fk_mark_user FOREIGN KEY (entered_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """
+    )
+
+    # Leave requests
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS leave_requests (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            student_id INT NOT NULL,
+            from_date DATE NOT NULL,
+            to_date DATE NOT NULL,
+            reason VARCHAR(500) NOT NULL,
+            status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+            decided_by_user_id INT NULL,
+            decided_at TIMESTAMP NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_student (student_id),
+            INDEX idx_status (status),
+            CONSTRAINT fk_leave_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+            CONSTRAINT fk_leave_decider FOREIGN KEY (decided_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """
+    )
+
 
 
 

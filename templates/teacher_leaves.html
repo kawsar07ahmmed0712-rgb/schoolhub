@@ -1,0 +1,63 @@
+{% set page_title = "Leave Approvals" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1300px;">
+    <section class="card card-pad">
+      <h1>Leave Approvals</h1>
+      <p class="muted">Pending leave requests for your class teacher assignment.</p>
+    </section>
+
+    <section class="card card-pad">
+      {% if rows|length == 0 %}
+        <p class="muted">No pending leave requests.</p>
+      {% else %}
+        <div style="overflow:auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Phone</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Reason</th>
+                <th>Requested</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.student_name }}</td>
+                  <td>{{ r.student_phone }}</td>
+                  <td>{{ r.from_date }}</td>
+                  <td>{{ r.to_date }}</td>
+                  <td style="white-space: pre-wrap;">{{ r.reason }}</td>
+                  <td>{{ r.created_at }}</td>
+                  <td>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                      <form method="post" action="{{ url_for('teacher_leave_decide') }}">
+                        <input type="hidden" name="leave_id" value="{{ r.id }}" />
+                        <input type="hidden" name="status" value="approved" />
+                        <button class="btn btn-ghost" type="submit">Approve</button>
+                      </form>
+                      <form method="post" action="{{ url_for('teacher_leave_decide') }}">
+                        <input type="hidden" name="leave_id" value="{{ r.id }}" />
+                        <input type="hidden" name="status" value="rejected" />
+                        <button class="btn btn-ghost" type="submit">Reject</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="{{ url_for('dashboard', role='teacher') }}">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

@@ -59,19 +59,26 @@
             <a class="btn" href="{{ url_for('student_attendance') }}">Attendance</a>
             <a class="btn" href="{{ url_for('student_payments_history') }}">My Payments</a>
             <a class="btn" href="{{ url_for('student_routine') }}">Routine</a>
+            <a class="btn" href="{{ url_for('student_results') }}">Results</a>
+            <a class="btn" href="{{ url_for('student_leaves') }}">Leave</a>
           {% elif role_ == "teacher" %}
             <a class="btn" href="{{ url_for('teacher_today_schedule') }}">Today's Schedule</a>
             <a class="btn" href="{{ url_for('teacher_attendance', role='teacher') }}">Take Attendance</a>
             <a class="btn" href="{{ url_for('teacher_students', role='teacher') }}">Students</a>
+            <a class="btn" href="{{ url_for('teacher_marks') }}">Marks</a>
+            <a class="btn" href="{{ url_for('teacher_leaves') }}">Leaves</a>
           {% elif role_ == "admin" %}
             <a class="btn" href="{{ url_for('admin_schedule_upload') }}">Upload Schedule</a>
             <a class="btn" href="{{ url_for('admin_payments') }}">Record Payment</a>
             <a class="btn" href="{{ url_for('admin_payments_history') }}">Payments History</a>
             <a class="btn" href="{{ url_for('admin_users') }}">Users</a>
             <a class="btn" href="{{ url_for('admin_settings') }}">Settings</a>
+            <a class="btn" href="{{ url_for('admin_timetable') }}">Timetable</a>
           {% elif role_ == "head" %}
             <a class="btn" href="{{ url_for('head_today_overview') }}">Today's Overview</a>
             <a class="btn" href="{{ url_for('head_teachers') }}">Teachers</a>
+            <a class="btn" href="{{ url_for('head_results') }}">Results</a>
+            <a class="btn" href="{{ url_for('head_approvals') }}">Approvals</a>
           {% endif %}
           <a class="btn btn-ghost" href="{{ url_for('notices', role=role_) }}">Notices</a>
         </div>

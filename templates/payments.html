@@ -29,7 +29,7 @@
         <div class="grid grid-2">
           <div>
             <label>Academic Year</label>
-            <input name="academic_year" value="{{ 2026 }}" inputmode="numeric" />
+            <input name="academic_year" value="{{ academic_year or 2026 }}" inputmode="numeric" />
           </div>
           <div>
             <label>Month (1-12)</label>
@@ -57,4 +57,3 @@
     </section>
   </div>
 {% endblock %}
-

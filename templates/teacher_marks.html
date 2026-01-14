@@ -1,0 +1,109 @@
+{% set page_title = "Marks Entry" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1300px;">
+    <section class="card card-pad">
+      <h1>Marks Entry</h1>
+      <p class="muted">
+        Class: <strong>{{ class_no }}</strong> · Section: <strong>{{ section }}</strong> · Academic year: <strong>{{ academic_year }}</strong>
+      </p>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Setup</h2>
+      <form method="get" action="{{ url_for('teacher_marks') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-3">
+          <div>
+            <label>Exam</label>
+            <select name="exam_id">
+              <option value="">Select...</option>
+              {% for e in exams %}
+                <option value="{{ e.id }}" {% if selected_exam_id == e.id %}selected{% endif %}>{{ e.name }} ({{ e.academic_year }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label>Subject</label>
+            <input name="subject" value="{{ subject or '' }}" placeholder="e.g. Math" />
+          </div>
+          <div>
+            <label>Max Marks</label>
+            <input name="max_marks" value="{{ max_marks or 100 }}" inputmode="numeric" />
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Load</button>
+          <a class="btn btn-ghost" href="{{ url_for('teacher_marks') }}">Reset</a>
+          <a class="btn btn-ghost" href="{{ url_for('dashboard', role='teacher') }}">Back to Dashboard</a>
+        </div>
+      </form>
+
+      <div class="alert" style="margin-top: 12px;">
+        <strong>Create new exam:</strong> use the form below (same page).
+      </div>
+      <form method="post" action="{{ url_for('teacher_marks_exam_create') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-2">
+          <div>
+            <label>New exam name</label>
+            <input name="name" placeholder="e.g. Midterm" required />
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button class="btn" type="submit">Create Exam</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      {% if not selected_exam_id or not subject %}
+        <p class="muted">Select an exam and enter a subject to start entering marks.</p>
+      {% elif students|length == 0 %}
+        <p class="muted">No students found for your class.</p>
+      {% else %}
+        <h2>Enter marks</h2>
+        <form method="post" action="{{ url_for('teacher_marks_save') }}" class="form-row" style="margin-top: 10px;">
+          <input type="hidden" name="exam_id" value="{{ selected_exam_id }}" />
+          <input type="hidden" name="subject" value="{{ subject }}" />
+          <input type="hidden" name="max_marks" value="{{ max_marks }}" />
+
+          <div style="overflow:auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Roll</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Marks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in students %}
+                  {% set existing = existing_marks.get(s.student_id) %}
+                  <tr>
+                    <td>{{ s.roll }}</td>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.phone }}</td>
+                    <td style="min-width: 180px;">
+                      <input
+                        name="mark_{{ s.student_id }}"
+                        inputmode="decimal"
+                        value="{{ existing.marks_obtained if existing else '' }}"
+                        placeholder="0 - {{ max_marks }}"
+                      />
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="submit">Save Marks</button>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+
