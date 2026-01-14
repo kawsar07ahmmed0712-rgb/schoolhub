@@ -1,234 +1,198 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - Today's Teaching Overview</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
+{% set page_title = "Today's Overview" %}
+{% extends "_base.html" %}
 
-  <body>
-    <h1>Today's Teaching Overview</h1>
-    
-    <p><strong>Date:</strong> {{ today }} | <strong>Weekday:</strong> {{ weekday }}</p>
-    <hr />
-    <p>
-      <strong>Quick:</strong>
-      <a href="{{ url_for('head_today_overview',
-                          teacher_id=selected_teacher_id,
-                          class_no=selected_class_no,
-                          section=selected_section,
-                          status='pending') }}">Pending</a>
-      |
-      <a href="{{ url_for('head_today_overview',
-                          teacher_id=selected_teacher_id,
-                          class_no=selected_class_no,
-                          section=selected_section,
-                          status='all') }}">All</a>
-      |
-      <a href="{{ url_for('head_today_overview',
-                          teacher_id=selected_teacher_id,
-                          class_no=selected_class_no,
-                          section=selected_section,
-                          status='done') }}">Done</a>
-    </p>
-    <p><strong>Date:</strong> {{ today }} | <strong>Weekday:</strong> {{ weekday }}</p>
+{% block content %}
+  <div class="grid" style="max-width: 1300px;">
+    <section class="card card-pad">
+      <h1>Today's Teaching Overview</h1>
+      <p class="muted"><strong>Date:</strong> {{ today }} · <strong>Weekday:</strong> {{ weekday }}</p>
 
-    <p>
-      <strong>Quick:</strong>
-    </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
+        <a class="btn btn-ghost" href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=selected_class_no, section=selected_section, status='pending') }}">Pending</a>
+        <a class="btn btn-ghost" href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=selected_class_no, section=selected_section, status='all') }}">All</a>
+        <a class="btn btn-ghost" href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=selected_class_no, section=selected_section, status='done') }}">Done</a>
+        <a class="btn btn-ghost" href="{{ url_for('dashboard', role='head') }}">Back to Dashboard</a>
+      </div>
+    </section>
 
-    {% set teacher_label = teacher_options.get(selected_teacher_id|int) if selected_teacher_id else None %}
+    <section class="grid grid-3">
+      <div class="card card-pad">
+        <div class="muted">Total</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ summary.total }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Done</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ summary.done }}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="muted">Pending</div>
+        <div style="font-size: 28px; font-weight: 800;">{{ summary.pending }}</div>
+      </div>
+    </section>
 
-    <p>
-      <strong>Current View:</strong>
-      <strong>Status:</strong> {{ selected_status|upper }}
+    <section class="card card-pad">
+      {% set teacher_label = teacher_options.get(selected_teacher_id|int) if selected_teacher_id else None %}
+      <h2>Filters</h2>
+      <p class="muted">
+        <strong>Status:</strong> {{ selected_status|upper }}
+        {% if teacher_label %}
+          · <strong>Teacher:</strong> {{ teacher_label }}
+          <a href="{{ url_for('head_today_overview', class_no=selected_class_no, section=selected_section, status=selected_status) }}">(clear)</a>
+        {% endif %}
+        {% if selected_class_no or selected_section %}
+          · <strong>Class:</strong> {{ selected_class_no or 'All' }}
+          <strong>Section:</strong> {{ selected_section or 'All' }}
+          <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, status=selected_status) }}">(clear)</a>
+        {% endif %}
+      </p>
 
-      {% if teacher_label %}
-        | <strong>Teacher:</strong> {{ teacher_label }}
-        <a href="{{ url_for('head_today_overview',
-                            class_no=selected_class_no,
-                            section=selected_section,
-                            status=selected_status) }}">(clear teacher)</a>
+      <form method="get" action="{{ url_for('head_today_overview') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-2">
+          <div>
+            <label for="teacher_id">Teacher</label>
+            <select id="teacher_id" name="teacher_id">
+              <option value="">All</option>
+              {% for tid, tlabel in teacher_options.items() %}
+                <option value="{{ tid }}" {% if selected_teacher_id == tid|string %}selected{% endif %}>{{ tlabel }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="all" {% if selected_status == "all" %}selected{% endif %}>All</option>
+              <option value="done" {% if selected_status == "done" %}selected{% endif %}>Done</option>
+              <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Pending</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div>
+            <label for="class_no">Class</label>
+            <select id="class_no" name="class_no">
+              <option value="">All</option>
+              {% for key, label in class_options.items() %}
+                <option value="{{ key[0] }}" {% if selected_class_no == key[0]|string %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="section">Section</label>
+            <select id="section" name="section">
+              <option value="">All</option>
+              <option value="A" {% if selected_section == "A" %}selected{% endif %}>A</option>
+              <option value="B" {% if selected_section == "B" %}selected{% endif %}>B</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Apply</button>
+          <a class="btn btn-ghost" href="{{ url_for('head_today_overview') }}">Reset</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="grid grid-2">
+      <div class="card card-pad">
+        <h2>By Teacher</h2>
+        <table class="table" style="margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>Teacher</th>
+              <th>Phone</th>
+              <th>Total</th>
+              <th>Done</th>
+              <th>Pending</th>
+              <th>Done %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in teacher_summary %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('head_today_overview', teacher_id=t.teacher_id, class_no=selected_class_no, section=selected_section, status=selected_status) }}">{{ t.teacher_name }}</a>
+                </td>
+                <td>{{ t.teacher_phone }}</td>
+                <td>{{ t.total }}</td>
+                <td>{{ t.done }}</td>
+                <td>{{ t.pending }}</td>
+                <td>{{ t.percent }}%</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card card-pad">
+        <h2>By Class</h2>
+        <table class="table" style="margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Section</th>
+              <th>Total</th>
+              <th>Done</th>
+              <th>Pending</th>
+              <th>Done %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in class_summary %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=c.class_no, section=c.section, status=selected_status) }}">{{ c.class_no }}</a>
+                </td>
+                <td>
+                  <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=c.class_no, section=c.section, status=selected_status) }}">{{ c.section }}</a>
+                </td>
+                <td>{{ c.total }}</td>
+                <td>{{ c.done }}</td>
+                <td>{{ c.pending }}</td>
+                <td>{{ c.percent }}%</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Details</h2>
+      {% if rows %}
+        <div style="overflow:auto; margin-top: 10px;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Teacher</th>
+                <th>Phone</th>
+                <th>Period</th>
+                <th>Class</th>
+                <th>Section</th>
+                <th>Status</th>
+                <th>Topic</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.teacher_name }}</td>
+                  <td>{{ r.teacher_phone }}</td>
+                  <td>{{ r.period_no }}</td>
+                  <td>{{ r.class_no }}</td>
+                  <td>{{ r.section }}</td>
+                  <td><strong>{{ r.status }}</strong></td>
+                  <td style="white-space: pre-wrap;">{{ r.topic }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">{{ message or "No results for current filters." }}</p>
       {% endif %}
+    </section>
+  </div>
+{% endblock %}
 
-      {% if selected_class_no or selected_section %}
-        | <strong>Class:</strong> {{ selected_class_no or 'All' }}
-        <strong>Section:</strong> {{ selected_section or 'All' }}
-        <a href="{{ url_for('head_today_overview',
-                            teacher_id=selected_teacher_id,
-                            status=selected_status) }}">(clear class/section)</a>
-      {% endif %}
-    </p>
-
-    
-    <form method="get" action="{{ url_for('head_today_overview') }}">
-      ...
-    </form>
-
-
-    <form method="get" action="{{ url_for('head_today_overview') }}">
-      <label for="teacher_id">Teacher:</label>
-      <select id="teacher_id" name="teacher_id">
-        <option value="">All</option>
-        {% for tid, tlabel in teacher_options.items() %}
-          <option value="{{ tid }}" {% if selected_teacher_id == tid|string %}selected{% endif %}>
-            {{ tlabel }}
-          </option>
-        {% endfor %}
-      </select>
-
-      <label for="class_no">Class:</label>
-      <select id="class_no" name="class_no">
-        <option value="">All</option>
-        {% for key, label in class_options.items() %}
-          <option value="{{ key[0] }}" {% if selected_class_no == key[0]|string %}selected{% endif %}>
-            {{ label }}
-          </option>
-        {% endfor %}
-      </select>
-
-      <label for="section">Section:</label>
-      <select id="section" name="section">
-        <option value="">All</option>
-        <option value="A" {% if selected_section == "A" %}selected{% endif %}>A</option>
-        <option value="B" {% if selected_section == "B" %}selected{% endif %}>B</option>
-      </select>
-
-      <label for="status">Status:</label>
-      <select id="status" name="status">
-        <option value="all" {% if selected_status == "all" %}selected{% endif %}>All</option>
-        <option value="done" {% if selected_status == "done" %}selected{% endif %}>Done</option>
-        <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Pending</option>
-      </select>
-
-      <button type="submit">Apply</button>
-    </form>
-
-    <hr />
-
-    <p>
-      <strong>Total:</strong> {{ summary.total }}
-      | <strong>Done:</strong> {{ summary.done }}
-      | <strong>Pending:</strong> {{ summary.pending }}
-      | <strong>Done %:</strong> {{ summary.percent }}%
-    </p>
-
-    <h2>By Teacher</h2>
-
-    <table border="1" cellpadding="8">
-      <thead>
-        <tr>
-          <th>Teacher</th>
-          <th>Phone</th>
-          <th>Total</th>
-          <th>Done</th>
-          <th>Pending</th>
-          <th>Done %</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for t in teacher_summary %}
-          <tr>
-            <td>
-              <a href="{{ url_for('head_today_overview',
-                                  teacher_id=t.teacher_id,
-                                  class_no=selected_class_no,
-                                  section=selected_section,
-                                  status=selected_status) }}">
-                {{ t.teacher_name }}
-              </a>
-            </td>
-            <td>{{ t.teacher_phone }}</td>
-            <td>{{ t.total }}</td>
-            <td>{{ t.done }}</td>
-            <td>{{ t.pending }}</td>
-            <td>{{ t.percent }}%</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <hr />
-
-    <h2>By Class</h2>
-
-    <table border="1" cellpadding="8">
-      <thead>
-        <tr>
-          <th>Class</th>
-          <th>Section</th>
-          <th>Total</th>
-          <th>Done</th>
-          <th>Pending</th>
-          <th>Done %</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for c in class_summary %}
-          <tr>
-            <td>
-              <a href="{{ url_for('head_today_overview',
-                                  teacher_id=selected_teacher_id,
-                                  class_no=c.class_no,
-                                  section=c.section,
-                                  status=selected_status) }}">
-                {{ c.class_no }}
-              </a>
-            </td>
-
-            <td>
-              <a href="{{ url_for('head_today_overview',
-                                  teacher_id=selected_teacher_id,
-                                  class_no=c.class_no,
-                                  section=c.section,
-                                  status=selected_status) }}">
-                {{ c.section }}
-              </a>
-            </td>
-            <td>{{ c.total }}</td>
-            <td>{{ c.done }}</td>
-            <td>{{ c.pending }}</td>
-            <td>{{ c.percent }}%</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <hr />
-
-
-    {% if message %}
-      <p>{{ message }}</p>
-    {% endif %}
-
-    <table border="1" cellpadding="8">
-      <thead>
-        <tr>
-          <th>Teacher</th>
-          <th>Phone</th>
-          <th>Period</th>
-          <th>Class</th>
-          <th>Section</th>
-          <th>Status</th>
-          <th>Topic</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in rows %}
-          <tr>
-            <td>{{ r.teacher_name }}</td>
-            <td>{{ r.teacher_phone }}</td>
-            <td>{{ r.period_no }}</td>
-            <td>{{ r.class_no }}</td>
-            <td>{{ r.section }}</td>
-            <td>{{ r.status }}</td>
-            <td>{{ r.topic }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <p><a href="{{ url_for('dashboard', role='head') }}">← Back to Dashboard</a></p>
-  </body>
-</html>

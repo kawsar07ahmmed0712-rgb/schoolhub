@@ -1,61 +1,67 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - My Attendance</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
+{% set page_title = "Attendance" %}
+{% extends "_base.html" %}
 
-  <body>
-    <h1>My Attendance</h1>
+{% block content %}
+  <div class="grid" style="max-width: 1100px;">
+    <section class="card card-pad">
+      <h1>My Attendance</h1>
+      <p class="muted"><strong>Name:</strong> {{ student_name or '-' }}</p>
+    </section>
 
-    {% if message %}
-      <p>{{ message }}</p>
-    {% endif %}
+    <section class="card card-pad">
+      <h2>Filter</h2>
+      <form method="get" action="{{ url_for('student_attendance') }}" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-2">
+          <div>
+            <label for="from">From</label>
+            <input id="from" name="from" type="date" value="{{ from_date or '' }}" />
+          </div>
+          <div>
+            <label for="to">To</label>
+            <input id="to" name="to" type="date" value="{{ to_date or '' }}" />
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Apply</button>
+          <a class="btn btn-ghost" href="{{ url_for('student_attendance') }}">Reset</a>
+        </div>
+      </form>
+    </section>
 
-    <p><strong>Name:</strong> {{ student_name or '-' }}</p>
+    <section class="card card-pad">
+      <h2>Summary</h2>
+      <p class="muted">
+        <strong>Total:</strong> {{ summary.total }} ·
+        <strong>Present:</strong> {{ summary.present }} ·
+        <strong>Absent:</strong> {{ summary.absent }} ·
+        <strong>Present %:</strong> {{ summary.percent }}%
+      </p>
 
-    <form method="get" action="{{ url_for('student_attendance') }}">
-      <label for="from">From</label>
-      <input id="from" name="from" type="date" value="{{ from_date or '' }}" />
-
-      <label for="to">To</label>
-      <input id="to" name="to" type="date" value="{{ to_date or '' }}" />
-
-      <button type="submit">Filter</button>
-    </form>
-
-    <hr />
-
-    <p>
-      <strong>Total:</strong> {{ summary.total }} |
-      <strong>Present:</strong> {{ summary.present }} |
-      <strong>Absent:</strong> {{ summary.absent }} |
-      <strong>Present %:</strong> {{ summary.percent }}%
-    </p>
-
-    {% if rows %}
-      <table border="1" cellpadding="8">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in rows %}
+      {% if rows %}
+        <table class="table" style="margin-top: 10px;">
+          <thead>
             <tr>
-              <td>{{ r.attendance_date }}</td>
-              <td>{{ r.status }}</td>
+              <th>Date</th>
+              <th>Status</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>No attendance records found.</p>
-    {% endif %}
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td>{{ r.attendance_date }}</td>
+                <td><strong>{{ r.status }}</strong></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted" style="margin-top: 10px;">No attendance records found.</p>
+      {% endif %}
 
-    <p><a href="{{ url_for('dashboard', role='student') }}">← Back to Dashboard</a></p>
-  </body>
-</html>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="{{ url_for('dashboard', role='student') }}">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

@@ -1,30 +1,45 @@
-<h2>Payment Receipt</h2>
-<p>Role: {{ role }} | Logged in as: {{ phone }}</p>
-{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+{% set page_title = "Payment Receipt" %}
+{% extends "_base.html" %}
 
-{% if not receipt %}
-  <p>No receipt to show.</p>
-{% else %}
-  <div style="border:1px solid #333; padding:12px; width:420px;">
-    <p><b>Receipt ID:</b> {{ receipt.id }}</p>
-    {% if receipt.student_phone %}
-      <p><b>Student:</b> {{ receipt.student_phone }}</p>
-    {% endif %}
-    <p><b>Class:</b> {{ receipt.class_no }}-{{ receipt.section }}</p>
-    <p><b>Academic Year:</b> {{ receipt.academic_year }}</p>
-    <p><b>Fee Month:</b> {{ receipt.fee_month }}</p>
-    <p><b>Plan Amount:</b> {{ receipt.plan_amount }}</p>
-    <p><b>Paid Amount:</b> {{ receipt.paid_amount }}</p>
-    <p><b>Paid At:</b> {{ receipt.paid_at }}</p>
-    <p><b>Received By:</b> {{ receipt.received_by_phone }}</p>
-    {% if receipt.note %}
-      <p><b>Note:</b> {{ receipt.note }}</p>
-    {% endif %}
+{% block content %}
+  <div class="grid" style="max-width: 900px;">
+    <section class="card card-pad">
+      <h1>Payment Receipt</h1>
+      <p class="muted">Role: {{ role }} · Logged in as: {{ phone }}</p>
+    </section>
+
+    <section class="card card-pad">
+      {% if not receipt %}
+        <p class="muted">No receipt to show.</p>
+      {% else %}
+        <table class="table">
+          <tbody>
+            <tr><th style="width: 220px;">Receipt ID</th><td>{{ receipt.id }}</td></tr>
+            {% if receipt.student_phone %}
+              <tr><th>Student</th><td>{{ receipt.student_phone }}</td></tr>
+            {% endif %}
+            <tr><th>Class</th><td>{{ receipt.class_no }}-{{ receipt.section }}</td></tr>
+            <tr><th>Academic Year</th><td>{{ receipt.academic_year }}</td></tr>
+            <tr><th>Fee Month</th><td>{{ receipt.fee_month }}</td></tr>
+            <tr><th>Plan Amount</th><td>{{ receipt.plan_amount }}</td></tr>
+            <tr><th>Paid Amount</th><td><strong>{{ receipt.paid_amount }}</strong></td></tr>
+            <tr><th>Paid At</th><td>{{ receipt.paid_at }}</td></tr>
+            <tr><th>Received By</th><td>{{ receipt.received_by_phone }}</td></tr>
+            {% if receipt.note %}
+              <tr><th>Note</th><td>{{ receipt.note }}</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        {% if role == "admin" %}
+          <a class="btn btn-primary" href="/dashboard/admin/payments_history">Back to Payments History</a>
+        {% else %}
+          <a class="btn btn-primary" href="/dashboard/student/payments">Back to My Payments</a>
+        {% endif %}
+      </div>
+    </section>
   </div>
-{% endif %}
+{% endblock %}
 
-{% if role == "admin" %}
-  <p><a href="/dashboard/admin/payments_history">← Back to Payments History</a></p>
-{% else %}
-  <p><a href="/dashboard/student/payments">← Back to My Payments</a></p>
-{% endif %}

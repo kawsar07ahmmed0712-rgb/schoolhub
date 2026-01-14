@@ -1,89 +1,74 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - Today's Schedule</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
+{% set page_title = "Today's Schedule" %}
+{% extends "_base.html" %}
 
-  <body>
-    <h1>Today's Schedule</h1>
+{% block content %}
+  <div class="grid" style="max-width: 1100px;">
+    <section class="card card-pad">
+      <h1>Today's Schedule</h1>
+      <p class="muted"><strong>Date:</strong> {{ today }} · <strong>Weekday:</strong> {{ weekday }}</p>
+    </section>
 
-    <p>
-      <strong>Date:</strong> {{ today }}
-      | <strong>Weekday:</strong> {{ weekday }}
-    </p>
+    <section class="card card-pad">
+      <h2>Periods (1–6)</h2>
+      <div class="grid" style="margin-top: 12px;">
+        {% for p in periods %}
+          <div class="card card-pad" style="box-shadow:none;">
+            <div style="display:flex; justify-content: space-between; gap: 10px; align-items:center; flex-wrap: wrap;">
+              <div>
+                <div style="font-weight: 760;">Period {{ p.period_no }}</div>
+                <div class="muted" style="font-size: 13px;">
+                  Class: <strong>{{ p.class_no }}</strong> · Section: <strong>{{ p.section }}</strong>
+                </div>
+              </div>
 
-    {% if message %}
-      <p>{{ message }}</p>
-    {% endif %}
+              {% if p.class_no == '-' %}
+                <span class="badge">No Class</span>
+              {% else %}
+                <span class="badge">{% if p.is_done == 1 %}Done{% else %}Pending{% endif %}</span>
+              {% endif %}
+            </div>
 
-    <hr />
-    <h2>Periods (1–6)</h2>
+            {% if p.class_no == '-' %}
+              <p class="muted" style="margin-top: 10px;">No class assigned for this period.</p>
+            {% else %}
+              <form method="post" action="{{ url_for('teacher_today_schedule') }}" class="form-row" style="margin-top: 12px;">
+                <input type="hidden" name="period_no" value="{{ p.period_no }}" />
 
-    {% for p in periods %}
-      <section style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
-        <h3>Period {{ p.period_no }}</h3>
+                <label style="display:inline-flex; align-items:center; gap:10px; margin: 0;">
+                  <input type="checkbox" name="is_done" {% if p.is_done == 1 %}checked{% endif %} style="width: 18px; height: 18px;" />
+                  <span>Mark as done</span>
+                </label>
 
-        <p>
-          <strong>Class:</strong> {{ p.class_no }}
-          | <strong>Section:</strong> {{ p.section }}
-        </p>
+                <div>
+                  <label for="topic-{{ p.period_no }}">Topic</label>
+                  <input id="topic-{{ p.period_no }}" name="topic" type="text" value="{{ p.topic }}" />
+                </div>
 
-        {% if p.class_no == '-' %}
-          <p><em>No class assigned for this period.</em></p>
-        {% else %}
-          <form method="post" action="{{ url_for('teacher_today_schedule') }}">
-            <input type="hidden" name="period_no" value="{{ p.period_no }}" />
+                <div class="grid grid-2">
+                  <div>
+                    <label for="hw-{{ p.period_no }}">Homework</label>
+                    <textarea id="hw-{{ p.period_no }}" name="homework" rows="4">{{ p.homework }}</textarea>
+                  </div>
+                  <div>
+                    <label for="notes-{{ p.period_no }}">Notes</label>
+                    <textarea id="notes-{{ p.period_no }}" name="notes" rows="4">{{ p.notes }}</textarea>
+                  </div>
+                </div>
 
-            <label>
-              <input
-                type="checkbox"
-                name="is_done"
-                {% if p.is_done == 1 %}checked{% endif %}
-              />
-              Done
-            </label>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn btn-primary" type="submit">Save Period {{ p.period_no }}</button>
+                </div>
+              </form>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
 
-            <br /><br />
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-ghost" href="{{ url_for('dashboard', role='teacher') }}">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('teacher_weekly_schedule') }}">Weekly Schedule</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
 
-            <label for="topic-{{ p.period_no }}">Topic</label><br />
-            <input
-              id="topic-{{ p.period_no }}"
-              name="topic"
-              type="text"
-              value="{{ p.topic }}"
-            />
-
-            <br /><br />
-
-            <label for="hw-{{ p.period_no }}">Homework</label><br />
-            <textarea
-              id="hw-{{ p.period_no }}"
-              name="homework"
-              rows="3"
-              cols="45"
-            >{{ p.homework }}</textarea>
-
-            <br /><br />
-
-            <label for="notes-{{ p.period_no }}">Notes</label><br />
-            <textarea
-              id="notes-{{ p.period_no }}"
-              name="notes"
-              rows="3"
-              cols="45"
-            >{{ p.notes }}</textarea>
-
-            <br /><br />
-
-            <button type="submit">Save Period {{ p.period_no }}</button>
-          </form>
-        {% endif %}
-      </section>
-    {% endfor %}
-
-    <p><a href="{{ url_for('dashboard', role='teacher') }}">← Back to Dashboard</a></p>
-  </body>
-</html>

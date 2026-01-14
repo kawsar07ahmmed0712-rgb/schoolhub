@@ -1,47 +1,45 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - Daily Class Update</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
+{% set page_title = "Daily Class Update" %}
+{% extends "_base.html" %}
 
-  <body>
-    <h1>Daily Class Update</h1>
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Daily Class Update</h1>
+      <p class="muted"><strong>Date:</strong> {{ today }}</p>
+      <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }}</p>
+    </section>
 
-    <p><strong>Date:</strong> {{ today }}</p>
-    <p><strong>Class:</strong> {{ class_no }} | <strong>Section:</strong> {{ section }}</p>
+    <section class="card card-pad">
+      <h2>Today's Periods (1–6)</h2>
+      {% if periods %}
+        <table class="table" style="margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Topic</th>
+              <th>Homework</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in periods %}
+              <tr>
+                <td>{{ p.period_no }}</td>
+                <td>{{ p.topic }}</td>
+                <td style="white-space: pre-wrap;">{{ p.homework }}</td>
+                <td style="white-space: pre-wrap;">{{ p.notes }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">No periods found for today.</p>
+      {% endif %}
 
-    {% if message %}
-      <p>{{ message }}</p>
-    {% endif %}
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="{{ url_for('dashboard', role='teacher') }}">Back to Dashboard</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
 
-    <hr />
-
-    <h2>Today’s Periods (1–6)</h2>
-
-    <table border="1" cellpadding="8">
-      <thead>
-        <tr>
-          <th>Period</th>
-          <th>Topic</th>
-          <th>Homework</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in periods %}
-          <tr>
-            <td>{{ p.period_no }}</td>
-            <td>{{ p.topic }}</td>
-            <td>{{ p.homework }}</td>
-            <td>{{ p.notes }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <p><a href="{{ url_for('dashboard', role='teacher') }}">← Back to Dashboard</a></p>
-  </body>
-</html>

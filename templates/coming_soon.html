@@ -1,19 +1,13 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - Coming Soon</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
+{% set page_title = "Coming Soon" %}
+{% extends "_base.html" %}
 
-  <body>
-    <h2>Coming Soon</h2>
-    <p>Role: {{ role }}</p>
-    <p>Logged in as: {{ phone }}</p>
-
-    <p><b>{{ page }}</b> page is coming soon.</p>
-
-    <p><a href="/dashboard/{{ role }}/">← Back to Dashboard</a></p>
-  </body>
-</html>
+{% block content %}
+  <div class="card card-pad" style="max-width: 860px;">
+    <h1>Coming Soon</h1>
+    <p class="muted"><strong>{{ page }}</strong> page is coming soon.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
+      <a class="btn btn-primary" href="/dashboard/{{ role }}/">Back to Dashboard</a>
+      <a class="btn btn-ghost" href="{{ url_for('notices', role=role) }}">Notices</a>
+    </div>
+  </div>
+{% endblock %}

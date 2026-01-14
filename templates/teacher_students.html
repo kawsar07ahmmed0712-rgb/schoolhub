@@ -1,50 +1,53 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - Student List</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
+{% set page_title = "Students" %}
+{% extends "_base.html" %}
 
-  <body>
-    <h1>Student List</h1>
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Student List</h1>
+      <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }}</p>
+    </section>
 
-    <p><strong>Class:</strong> {{ class_no }} | <strong>Section:</strong> {{ section }}</p>
+    <section class="card card-pad">
+      <form method="get" action="{{ url_for('teacher_students', role=role) }}" class="form-row">
+        <div class="grid grid-2">
+          <div>
+            <label>Search</label>
+            <input name="q" type="text" placeholder="Search by name or phone" value="{{ q or '' }}" />
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="submit">Search</button>
+            <a class="btn btn-ghost" href="{{ url_for('teacher_students', role=role) }}">Reset</a>
+            <a class="btn btn-ghost" href="{{ url_for('dashboard', role=role) }}">Back to Dashboard</a>
+          </div>
+        </div>
+      </form>
+    </section>
 
-    <form method="get" action="{{ url_for('teacher_students', role=role) }}">
-      <input name="q" type="text" placeholder="Search by name or phone" value="{{ q or '' }}" />
-      <button type="submit">Search</button>
-    </form>
-
-    {% if message %}
-      <p>{{ message }}</p>
-    {% endif %}
-
-    {% if students %}
-      <table border="1" cellpadding="8">
-        <thead>
-          <tr>
-            <th>Roll</th>
-            <th>Name</th>
-            <th>Phone</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in students %}
+    <section class="card card-pad">
+      {% if students %}
+        <table class="table">
+          <thead>
             <tr>
-              <td>{{ s.roll }}</td>
-              <td>{{ s.name }}</td>
-              <td>{{ s.phone }}</td>
+              <th>Roll</th>
+              <th>Name</th>
+              <th>Phone</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% endif %}
+          </thead>
+          <tbody>
+            {% for s in students %}
+              <tr>
+                <td>{{ s.roll }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.phone }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">{{ message or "No students found." }}</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
 
-    <p><a href="{{ url_for('dashboard', role=role) }}">← Back to Dashboard</a></p>
-  </body>
-</html>
-
-    
-    

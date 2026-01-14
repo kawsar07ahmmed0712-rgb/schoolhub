@@ -1,21 +1,19 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - {{ page_title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+{% set page_title = page_title or "Page" %}
+{% extends "_base.html" %}
 
-  </head>
-
-  <body>
+{% block content %}
+  <div class="card card-pad" style="max-width: 900px;">
     <h1>{{ page_title }}</h1>
-    <p>Role: {{ role }}</p>
+    <p class="muted">This page is a placeholder. Real UI will be added later.</p>
 
-    <p>This is a placeholder page. Real UI will be added later.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+      {% if role %}
+        <a class="btn btn-primary" href="{{ url_for('dashboard', role=role) }}">Back to Dashboard</a>
+      {% else %}
+        <a class="btn btn-primary" href="{{ url_for('home') }}">Home</a>
+      {% endif %}
+      <a class="btn btn-ghost" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+  </div>
+{% endblock %}
 
-    <p><a href="{{ url_for('dashboard', role=role) }}">← Back to Dashboard</a></p>
-    <p><a href="{{ url_for('logout') }}">Logout</a></p>
-
-  </body>
-</html>

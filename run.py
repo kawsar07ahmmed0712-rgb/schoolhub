@@ -254,6 +254,63 @@ ROLE_PAGES = {
     ],
 }
 
+def build_nav_links(role: str) -> dict:
+  role = normalize_role(role)
+  links = {
+    "profile": url_for("dashboard", role=role),
+    "notices": url_for("notices", role=role),
+  }
+
+  if role == "student":
+    links.update(
+      {
+        "fees": url_for("student_fees"),
+        "payments": url_for("student_payments_history"),
+        "attendance": url_for("student_attendance"),
+      }
+    )
+  elif role == "teacher":
+    links.update(
+      {
+        "students": url_for("teacher_students", role="teacher"),
+        "attendance": url_for("teacher_attendance", role="teacher"),
+        "today_schedule": url_for("teacher_today_schedule"),
+        "weekly_schedule": url_for("teacher_weekly_schedule"),
+        "daily_class": url_for("teacher_daily_class"),
+      }
+    )
+  elif role == "head":
+    links.update(
+      {
+        "today_overview": url_for("head_today_overview"),
+      }
+    )
+  elif role == "admin":
+    links.update(
+      {
+        "fees_setup": url_for("admin_fees_setup"),
+        "payments": url_for("admin_payments"),
+        "payments_history": url_for("admin_payments_history"),
+        "schedule_upload": url_for("admin_schedule_upload"),
+      }
+    )
+
+  return links
+
+
+@app.context_processor
+def inject_layout_globals():
+  role = session.get("role")
+  role_norm = normalize_role(role) if role else None
+  return {
+    "app_name": "SchoolHub",
+    "session_role": role_norm,
+    "session_phone": session.get("phone"),
+    "role_pages": ROLE_PAGES,
+    "nav_links": build_nav_links(role_norm) if role_norm else {},
+    "current_year": datetime.now().year,
+  }
+
 
 
 
@@ -357,44 +414,7 @@ def dashboard_page(role, page):
     return redirect(url_for("login", role=role))
 
 
-  page_routes = {
-    "profile": url_for("dashboard", role=role),
-    "notices": url_for("notices", role=role),
-  }
-
-  if role == "student":
-    page_routes.update(
-      {
-        "fees": url_for("student_fees"),
-        "payments": url_for("student_payments_history"),
-        "attendance": url_for("student_attendance"),
-      }
-    )
-  elif role == "teacher":
-    page_routes.update(
-      {
-        "students": url_for("teacher_students", role="teacher"),
-        "attendance": url_for("teacher_attendance", role="teacher"),
-        "today_schedule": url_for("teacher_today_schedule"),
-        "weekly_schedule": url_for("teacher_weekly_schedule"),
-        "daily_class": url_for("teacher_daily_class"),
-      }
-    )
-  elif role == "head":
-    page_routes.update(
-      {
-        "today_overview": url_for("head_today_overview"),
-      }
-    )
-  elif role == "admin":
-    page_routes.update(
-      {
-        "fees_setup": url_for("admin_fees_setup"),
-        "payments": url_for("admin_payments"),
-        "payments_history": url_for("admin_payments_history"),
-        "schedule_upload": url_for("admin_schedule_upload"),
-      }
-    )
+  page_routes = build_nav_links(role)
 
   target = page_routes.get(page)
   app.logger.info(f"MENU target={target}")

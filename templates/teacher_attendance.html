@@ -1,58 +1,64 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - Take Attendance</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
+{% set page_title = "Take Attendance" %}
+{% extends "_base.html" %}
 
-  <body>
-    <h1>Take Attendance</h1>
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Take Attendance</h1>
+      <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }}</p>
+    </section>
 
-    <p><strong>Class:</strong> {{ class_no }} | <strong>Section:</strong> {{ section }}</p>
+    <section class="card card-pad">
+      <form method="post" action="{{ url_for('teacher_attendance', role=role) }}" class="form-row">
+        <div class="grid grid-2">
+          <div>
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" value="{{ date_str }}" />
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="btn btn-primary" type="submit">Save Attendance</button>
+            <a class="btn btn-ghost" href="{{ url_for('dashboard', role=role) }}">Back to Dashboard</a>
+          </div>
+        </div>
 
-    {% if message %}
-      <p>{{ message }}</p>
-    {% endif %}
+        {% if students %}
+          <table class="table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th>Roll</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Present?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+                {% set st = status_map.get(s.student_id) %}
+                <tr>
+                  <td>{{ s.roll }}</td>
+                  <td>{{ s.name }}</td>
+                  <td>{{ s.phone }}</td>
+                  <td>
+                    <label style="display:inline-flex; align-items:center; gap:10px; margin:0;">
+                      <input
+                        type="checkbox"
+                        name="present_ids"
+                        value="{{ s.student_id }}"
+                        {% if st != 'absent' %}checked{% endif %}
+                        style="width: 18px; height: 18px;"
+                      />
+                      <span class="muted">Present</span>
+                    </label>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">No students found for this class/section.</p>
+        {% endif %}
+      </form>
+    </section>
+  </div>
+{% endblock %}
 
-    <form method="post" action="{{ url_for('teacher_attendance', role=role) }}">
-      <label for="date">Date</label>
-      <input id="date" name="date" type="date" value="{{ date_str }}" />
-      <button type="submit">Save Attendance</button>
-
-      <br /><br />
-
-      <table border="1" cellpadding="8">
-        <thead>
-          <tr>
-            <th>Roll</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Present?</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in students %}
-            {% set st = status_map.get(s.student_id) %}
-            <tr>
-              <td>{{ s.roll }}</td>
-              <td>{{ s.name }}</td>
-              <td>{{ s.phone }}</td>
-              <td>
-                <input
-                  type="checkbox"
-                  name="present_ids"
-                  value="{{ s.student_id }}"
-                  {% if st != 'absent' %}checked{% endif %}
-                />
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <p><a href="{{ url_for('dashboard', role=role) }}">← Back to Dashboard</a></p>
-    </form>
-  </body>
-</html>

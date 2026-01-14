@@ -1,70 +1,96 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub - Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+{% set page_title = "Dashboard" %}
+{% extends "_base.html" %}
 
-  </head>
+{% block content %}
+  {% set role_ = (role if role else session_role) %}
+  {% set phone_ = (phone if phone else session_phone) %}
 
-  <body>
-    <h1>{{ role|capitalize }} Dashboard</h1>
-    {% if phone %}
-      <p>Welcome, {{ phone }}.</p>
+  <div class="grid" style="margin-bottom: 16px;">
+    <section class="card card-pad">
+      <div style="display:flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div>
+          <h1>{{ role_|capitalize }} Dashboard</h1>
+          <p class="muted">Welcome back{% if phone_ %}, {{ phone_ }}{% endif %}.</p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap: wrap; align-items: center;">
+          <a class="btn btn-ghost" href="{{ url_for('notices', role=role_) }}">Notices</a>
+          <a class="btn btn-primary" href="{{ url_for('logout') }}">Logout</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-2">
+      <div class="card card-pad">
+        <h2>Profile</h2>
         {% if profile %}
-          <hr />
-          <h2>Profile Summary</h2>
-
-          <!-- This is Student Dashboard-->
-          {% if role == 'student' %}
+          {% if role_ == 'student' %}
             <p><strong>Name:</strong> {{ profile.name }}</p>
             {% if profile.class_no %}
-              <p><strong>Class:</strong> {{ profile.class_no }} | <strong>Section:</strong> {{ profile.section }} | <strong>Roll:</strong> {{ profile.roll }}</p>
+              <p class="muted"><strong>Class:</strong> {{ profile.class_no }} · <strong>Section:</strong> {{ profile.section }} · <strong>Roll:</strong> {{ profile.roll }}</p>
             {% else %}
-              <p><em>Class info not found in class tables yet.</em></p>
+              <p class="muted">Class info not found in class tables yet.</p>
             {% endif %}
-          
-          <!-- This is Teacher Dashboard-->
-          {% elif role == 'teacher' %}
+          {% elif role_ == 'teacher' %}
             <p><strong>Name:</strong> {{ profile.name }}</p>
-            <p><strong>Teacher ID:</strong> {{ profile.teacher_code }}</p>
+            <p class="muted"><strong>Teacher ID:</strong> {{ profile.teacher_code }}</p>
             {% if profile.class_no %}
-              <p><strong>Class Teacher For:</strong> Class {{ profile.class_no }} - Section {{ profile.section }}</p>
+              <p class="muted"><strong>Class Teacher For:</strong> Class {{ profile.class_no }} - Section {{ profile.section }}</p>
             {% else %}
-              <p><em>Class teacher assignment not found yet.</em></p>
+              <p class="muted">Class teacher assignment not found yet.</p>
             {% endif %}
-
-          <!-- This is Admin dashboard -->
-          {% elif role == 'admin' %}
+          {% elif role_ == 'admin' %}
             <p><strong>Name:</strong> {{ profile.name }}</p>
-            <p><strong>Secret ID:</strong> {{ profile.secret_id }}</p>
-
-
-          <!-- This is Head dashboard -->
-          {% elif role == 'head' %}
+            <p class="muted"><strong>Secret ID:</strong> {{ profile.secret_id }}</p>
+          {% elif role_ == 'head' %}
             <p><strong>Name:</strong> {{ profile.name }}</p>
-            <p><strong>Auth ID:</strong> {{ profile.authentication_id }}</p>
+            <p class="muted"><strong>Auth ID:</strong> {{ profile.authentication_id }}</p>
           {% endif %}
+        {% else %}
+          <p class="muted">Profile not found.</p>
         {% endif %}
-    {% endif %}
+      </div>
 
-    <h2>Menu</h2>
-    <ul>
-      {% for slug, label in pages %}
-        <li><a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a></li>
-      {% endfor %}
-    </ul>
+      <div class="card card-pad">
+        <h2>Quick Actions</h2>
+        <p class="muted">Jump directly to the most-used tools.</p>
+        <div style="display:flex; gap:10px; flex-wrap: wrap; margin-top: 10px;">
+          {% if role_ == "student" %}
+            <a class="btn" href="{{ url_for('student_fees') }}">Fees</a>
+            <a class="btn" href="{{ url_for('student_attendance') }}">Attendance</a>
+            <a class="btn" href="{{ url_for('student_payments_history') }}">My Payments</a>
+          {% elif role_ == "teacher" %}
+            <a class="btn" href="{{ url_for('teacher_today_schedule') }}">Today's Schedule</a>
+            <a class="btn" href="{{ url_for('teacher_attendance', role='teacher') }}">Take Attendance</a>
+            <a class="btn" href="{{ url_for('teacher_students', role='teacher') }}">Students</a>
+          {% elif role_ == "admin" %}
+            <a class="btn" href="{{ url_for('admin_schedule_upload') }}">Upload Schedule</a>
+            <a class="btn" href="{{ url_for('admin_payments') }}">Record Payment</a>
+            <a class="btn" href="{{ url_for('admin_payments_history') }}">Payments History</a>
+          {% elif role_ == "head" %}
+            <a class="btn" href="{{ url_for('head_today_overview') }}">Today's Overview</a>
+          {% endif %}
+          <a class="btn btn-ghost" href="{{ url_for('notices', role=role_) }}">Notices</a>
+        </div>
+      </div>
+    </section>
 
-
-
-    <hr />
-
-    <ul>
-    <li><a href="/">Go to Landing</a></li>
-    <li><a href="/login?role={{ role }}">Go to Login</a></li>
-    <li><a href="{{ url_for('logout') }}">Logout</a></li>
-    </ul>
-
-  </body>
-</html>
+    <section class="card card-pad">
+      <h2>Menu</h2>
+      <p class="muted">Everything available for your role.</p>
+      <div class="grid grid-3" style="margin-top: 12px;">
+        {% for slug, label in pages %}
+          {% set href = (nav_links.get(slug) if nav_links is defined else None) or url_for('dashboard_page', role=role_, page=slug) %}
+          <a class="card card-pad menu-tile" href="{{ href }}" style="text-decoration:none; box-shadow:none;">
+            <div style="display:flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <div>
+                <div style="font-weight: 760;">{{ label }}</div>
+                <div class="muted" style="font-size: 13px; margin-top: 2px;">{{ slug.replace('_', ' ') }}</div>
+              </div>
+              <span class="badge">Open</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

@@ -1,38 +1,32 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub  Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+{% set page_title = "Login" %}
+{% extends "_base.html" %}
 
-  </head>
+{% block content %}
+  <div class="content-inner" style="max-width: 720px;">
+    <div class="card card-pad">
+      <h1>Login</h1>
+      <p class="muted">Role: <span class="badge">{{ role }}</span></p>
 
-  <body>
-    <h1>Login</h1>
+      {% if message %}
+        <div class="alert">{{ message }}</div>
+      {% endif %}
 
-    <h2>Role: {{ role }}</h2>
+      <form method="post" action="/login" class="form-row" style="margin-top: 12px;">
+        <div>
+          <label for="phone">Phone</label>
+          <input id="phone" name="phone" type="text" value="{{ phone or '' }}" autocomplete="username" />
+        </div>
 
-    {% if message %}
-        <p>{{ message }}</p>
-    {% endif %}
+        <div>
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" />
+        </div>
 
-    <form method="post" action="/login">
-        
-
-        <label for="phone">Phone</label>
-        <input id="phone" name="phone" type="text" value="{{ phone or '' }}" />
-
-        <br /><br />
-
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" />
-
-        <br /><br />
-
-        <button type="submit">Login</button>
-    </form>
-
-    <p><a href="/">← Back to role select</a></p>
-  </body>
-</html>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 6px;">
+          <button class="btn btn-primary" type="submit">Sign in</button>
+          <a class="btn btn-ghost" href="{{ url_for('home') }}">Change role</a>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

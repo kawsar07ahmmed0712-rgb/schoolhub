@@ -1,25 +1,48 @@
-<h2>My Payments</h2>
-<p>Logged in as: {{ phone }}</p>
-{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+{% set page_title = "My Payments" %}
+{% extends "_base.html" %}
 
-{% if rows|length == 0 %}
-  <p>No payments found.</p>
-{% else %}
-  <table border="1" cellpadding="6">
-    <tr>
-      <th>Paid At</th><th>Year</th><th>Month</th><th>Paid</th><th>Receiver</th><th>Receipt</th>
-    </tr>
-    {% for r in rows %}
-      <tr>
-        <td>{{ r.paid_at }}</td>
-        <td>{{ r.academic_year }}</td>
-        <td>{{ r.fee_month }}</td>
-        <td>{{ r.paid_amount }}</td>
-        <td>{{ r.received_by_phone }}</td>
-        <td><a href="/dashboard/student/payments/{{ r.id }}">View</a></td>
-      </tr>
-    {% endfor %}
-  </table>
-{% endif %}
+{% block content %}
+  <div class="grid" style="max-width: 1100px;">
+    <section class="card card-pad">
+      <h1>My Payments</h1>
+      <p class="muted">Logged in as: {{ phone }}</p>
+    </section>
 
-<p><a href="/dashboard/student/">← Back to Dashboard</a></p>
+    <section class="card card-pad">
+      {% if rows|length == 0 %}
+        <p class="muted">No payments found.</p>
+      {% else %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Paid At</th>
+              <th>Year</th>
+              <th>Month</th>
+              <th>Paid</th>
+              <th>Receiver</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td>{{ r.paid_at }}</td>
+                <td>{{ r.academic_year }}</td>
+                <td>{{ r.fee_month }}</td>
+                <td><strong>{{ r.paid_amount }}</strong></td>
+                <td>{{ r.received_by_phone }}</td>
+                <td><a class="btn btn-ghost" href="/dashboard/student/payments/{{ r.id }}">View</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/student/">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('student_fees') }}">Fees</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

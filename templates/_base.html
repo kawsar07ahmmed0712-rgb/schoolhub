@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% if page_title %}{{ page_title }} · {% endif %}{{ app_name or "SchoolHub" }}
+    </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+    {% block extra_head %}{% endblock %}
+  </head>
+
+  <body>
+    {% set role_ = (role if (role is defined and role) else session_role) %}
+    {% set phone_ = (phone if (phone is defined and phone) else session_phone) %}
+    {% set is_logged_in = (session_role is not none) %}
+    {% set nav_pages_ = (pages if (pages is defined and pages) else (role_pages.get(role_, []) if role_ else [])) %}
+
+    <div class="app-shell" data-theme="dark">
+      <div class="bg" aria-hidden="true"></div>
+      <header class="topbar">
+        <a class="brand" href="{{ url_for('home') }}">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2 2 7l10 5 10-5-10-5Z" stroke="currentColor" stroke-width="1.8" />
+              <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.8" opacity=".8" />
+              <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.8" opacity=".8" />
+            </svg>
+          </span>
+          <span class="brand-text">{{ app_name or "SchoolHub" }}</span>
+        </a>
+
+        <div class="topbar-right">
+          {% if is_logged_in %}
+            <div class="user-pill" title="Signed in">
+              <span class="badge">{{ role_|capitalize }}</span>
+              <span class="user-phone">{{ phone_ }}</span>
+            </div>
+          {% endif %}
+
+          <button class="icon-btn" type="button" data-action="toggle-theme" aria-label="Toggle theme">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M21 13.5A8.5 8.5 0 0 1 10.5 3a7 7 0 1 0 10.5 10.5Z"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                />
+              </svg>
+            </span>
+          </button>
+
+          {% if is_logged_in %}
+            <a class="btn btn-ghost" href="{{ url_for('logout') }}">Logout</a>
+            <button class="icon-btn mobile-only" type="button" data-action="toggle-nav" aria-label="Toggle navigation">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </span>
+            </button>
+          {% else %}
+            <a class="btn btn-ghost" href="{{ url_for('home') }}">Home</a>
+          {% endif %}
+        </div>
+      </header>
+
+      <aside class="sidebar {% if not is_logged_in %}sidebar-hidden{% endif %}" data-nav>
+        {% if is_logged_in %}
+          <div class="sidebar-header">
+            <div class="sidebar-title">Dashboard</div>
+            <div class="sidebar-subtitle">{{ role_|capitalize }} Menu</div>
+          </div>
+
+          <nav class="nav">
+            <ul class="nav-list">
+              {% for slug, label in nav_pages_ %}
+                {% set href = (nav_links.get(slug) if nav_links is defined else None) or url_for('dashboard_page', role=role_, page=slug) %}
+                {% set req_path = request.path.rstrip('/') %}
+                {% set href_path = href.rstrip('/') %}
+                {% if slug == 'profile' %}
+                  {% set active = (req_path == href_path) %}
+                {% else %}
+                  {% set active = (req_path.startswith(href_path)) %}
+                {% endif %}
+                <li class="nav-item">
+                  <a class="nav-link {% if active %}is-active{% endif %}" href="{{ href }}">
+                    <span class="nav-ico" aria-hidden="true">
+                      {% if slug in ['profile'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="1.8" />
+                          <path d="M4 21a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                      {% elif slug in ['notices'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M6 8h12M6 12h12M6 16h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M5 4h14a2 2 0 0 1 2 2v12l-4-2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" opacity=".9" />
+                        </svg>
+                      {% elif slug in ['attendance'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M7 3v3M17 3v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M4 7h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M5 5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" />
+                          <path d="M8 12l2 2 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                      {% elif slug in ['fees','fees_setup','payments','payments_history'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M6 7h12v10H6z" stroke="currentColor" stroke-width="1.8" />
+                          <path d="M8 11h8M8 14h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M6 7 4 5h16l-2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".85" />
+                        </svg>
+                      {% elif slug in ['students'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M7 13a3 3 0 1 0-3-3 3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8" />
+                          <path d="M17 13a3 3 0 1 0-3-3 3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8" opacity=".8" />
+                          <path d="M2.5 21a5.5 5.5 0 0 1 9 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M12.5 21a5.5 5.5 0 0 1 9 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".8" />
+                        </svg>
+                      {% elif slug in ['today_schedule','weekly_schedule','schedule_upload','timetable'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M7 3v3M17 3v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M4 7h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M5 5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" opacity=".95" />
+                          <path d="M8 11h3M8 15h3M13 11h3M13 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".85" />
+                        </svg>
+                      {% else %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                      {% endif %}
+                    </span>
+                    <span class="nav-text">{{ label }}</span>
+                    <span class="nav-arrow" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </span>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </nav>
+        {% endif %}
+      </aside>
+
+      <main class="content">
+        <div class="content-inner">
+          {% if message %}
+            <div class="alert">{{ message }}</div>
+          {% endif %}
+          {% block content %}{% endblock %}
+        </div>
+        <footer class="footer">
+          <div class="footer-inner">
+            <span>{{ app_name or "SchoolHub" }} · {{ (role_|capitalize) if role_ else "Welcome" }}</span>
+            <span class="footer-dot">•</span>
+            <span>{{ current_year }}</span>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,25 +1,45 @@
-<h2>Fees (Monthly) - {{ academic_year }}</h2>
-<p>Role: {{ role }}</p>
-<p>Logged in as: {{ phone }}</p>
+{% set page_title = "Fees" %}
+{% extends "_base.html" %}
 
-{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+{% block content %}
+  <div class="grid" style="max-width: 1100px;">
+    <section class="card card-pad">
+      <h1>Fees (Monthly)</h1>
+      <p class="muted">Academic year: <strong>{{ academic_year }}</strong></p>
+      <p class="muted">Logged in as: {{ phone }}</p>
+    </section>
 
-{% if rows|length == 0 %}
-  <p>No fee plans yet.</p>
-{% else %}
-  <table border="1" cellpadding="6">
-    <tr>
-      <th>Month</th><th>Amount</th><th>Paid</th><th>Due</th>
-    </tr>
-    {% for r in rows %}
-      <tr>
-        <td>{{ r.fee_month }}</td>
-        <td>{{ r.amount }}</td>
-        <td>{{ r.paid_total }}</td>
-        <td>{{ r.due }}</td>
-      </tr>
-    {% endfor %}
-  </table>
-{% endif %}
+    <section class="card card-pad">
+      {% if rows|length == 0 %}
+        <p class="muted">No fee plans yet.</p>
+      {% else %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Amount</th>
+              <th>Paid</th>
+              <th>Due</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td>{{ r.fee_month }}</td>
+                <td>{{ r.amount }}</td>
+                <td>{{ r.paid_total }}</td>
+                <td><strong>{{ r.due }}</strong></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
 
-<p><a href="/dashboard/student/">← Back to Dashboard</a></p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/student/">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('student_payments_history') }}">My Payments</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

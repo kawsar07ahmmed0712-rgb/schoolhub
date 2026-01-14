@@ -1,16 +1,26 @@
-<h2>{{ title }}</h2>
+{% set page_title = title or "Error" %}
+{% extends "_base.html" %}
 
-{% if role %}
-  <p>Role: {{ role }}</p>
-{% endif %}
+{% block content %}
+  <div class="card card-pad" style="max-width: 900px;">
+    <h1>{{ title or "Error" }}</h1>
 
-{% if phone %}
-  <p>Logged in as: {{ phone }}</p>
-{% endif %}
+    {% if role %}
+      <p class="muted">Role: {{ role }}</p>
+    {% endif %}
 
-<p><b>{{ message }}</b></p>
+    {% if phone %}
+      <p class="muted">Logged in as: {{ phone }}</p>
+    {% endif %}
 
-<p><a href="/">Go Home</a></p>
-{% if role %}
-  <p><a href="/dashboard/{{ role }}/">Back to Dashboard</a></p>
-{% endif %}
+    <div class="alert">{{ message }}</div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a class="btn btn-primary" href="{{ url_for('home') }}">Go Home</a>
+      {% if role %}
+        <a class="btn btn-ghost" href="/dashboard/{{ role }}/">Back to Dashboard</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+

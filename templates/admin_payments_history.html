@@ -1,37 +1,84 @@
-<h2>Payments History (Admin)</h2>
-<p>Logged in as: {{ phone }}</p>
+{% set page_title = "Payments History" %}
+{% extends "_base.html" %}
 
-<form method="GET">
-  <p>
-    Class: <input name="class_no" value="{{ filters.class_no }}" />
-    Section: <input name="section" value="{{ filters.section }}" />
-    Year: <input name="academic_year" value="{{ filters.academic_year }}" />
-    Month: <input name="fee_month" value="{{ filters.fee_month }}" />
-    Student Phone: <input name="student_phone" value="{{ filters.student_phone }}" />
-    <button type="submit">Filter</button>
-  </p>
-</form>
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Payments History</h1>
+      <p class="muted">Admin panel · Logged in as: {{ phone }}</p>
+    </section>
 
-{% if rows|length == 0 %}
-  <p>No payments found.</p>
-{% else %}
-  <table border="1" cellpadding="6">
-    <tr>
-      <th>Paid At</th><th>Student</th><th>Class</th><th>Year</th><th>Month</th><th>Paid</th><th>Receiver</th><th>Receipt</th>
-    </tr>
-    {% for r in rows %}
-      <tr>
-        <td>{{ r.paid_at }}</td>
-        <td>{{ r.student_phone }}</td>
-        <td>{{ r.class_no }}-{{ r.section }}</td>
-        <td>{{ r.academic_year }}</td>
-        <td>{{ r.fee_month }}</td>
-        <td>{{ r.paid_amount }}</td>
-        <td>{{ r.received_by_phone }}</td>
-        <td><a href="/dashboard/admin/payments/{{ r.id }}">View</a></td>
-      </tr>
-    {% endfor %}
-  </table>
-{% endif %}
+    <section class="card card-pad">
+      <h2>Filters</h2>
+      <form method="GET" class="form-row" style="margin-top: 10px;">
+        <div class="grid grid-3">
+          <div>
+            <label>Class</label>
+            <input name="class_no" value="{{ filters.class_no }}" />
+          </div>
+          <div>
+            <label>Section</label>
+            <input name="section" value="{{ filters.section }}" />
+          </div>
+          <div>
+            <label>Year</label>
+            <input name="academic_year" value="{{ filters.academic_year }}" />
+          </div>
+        </div>
 
-<p><a href="/dashboard/admin/">← Back to Dashboard</a></p>
+        <div class="grid grid-2">
+          <div>
+            <label>Month</label>
+            <input name="fee_month" value="{{ filters.fee_month }}" />
+          </div>
+          <div>
+            <label>Student Phone</label>
+            <input name="student_phone" value="{{ filters.student_phone }}" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Apply Filters</button>
+          <a class="btn btn-ghost" href="{{ url_for('admin_payments_history') }}">Reset</a>
+          <a class="btn btn-ghost" href="/dashboard/admin/">Back to Dashboard</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card-pad">
+      {% if rows|length == 0 %}
+        <p class="muted">No payments found.</p>
+      {% else %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Paid At</th>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Year</th>
+              <th>Month</th>
+              <th>Paid</th>
+              <th>Receiver</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td>{{ r.paid_at }}</td>
+                <td>{{ r.student_phone }}</td>
+                <td>{{ r.class_no }}-{{ r.section }}</td>
+                <td>{{ r.academic_year }}</td>
+                <td>{{ r.fee_month }}</td>
+                <td><strong>{{ r.paid_amount }}</strong></td>
+                <td>{{ r.received_by_phone }}</td>
+                <td><a class="btn btn-ghost" href="/dashboard/admin/payments/{{ r.id }}">View</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+

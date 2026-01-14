@@ -1,23 +1,36 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SchoolHub Select Role</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+{% set page_title = "Welcome" %}
+{% extends "_base.html" %}
 
-  </head>
+{% block content %}
+  <div class="grid grid-2">
+    <section class="card card-pad">
+      <h1>SchoolHub</h1>
+      <p class="muted">A clean, role-based school dashboard for students, teachers, head teachers, and admins.</p>
+      <p class="muted">Choose a role to sign in.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        <a class="btn btn-primary" href="/login?role=student">Continue as Student</a>
+        <a class="btn" href="/login?role=teacher">Teacher</a>
+        <a class="btn" href="/login?role=head">Head Teacher</a>
+        <a class="btn" href="/login?role=admin">Admin</a>
+      </div>
+    </section>
 
-  <body>
-    <h1>Select your role</h1>
-
-    <p>Choose one to continue:</p>
-
-    <ul>
-      <li><a href="/login?role=student">Student</a></li>
-      <li><a href="/login?role=teacher">Teacher</a></li>
-      <li><a href="/login?role=head">Head Teacher</a></li>
-      <li><a href="/login?role=admin">Admin</a></li>
-    </ul>
-  </body>
-</html>
+    <section class="card card-pad">
+      <h2>What you can do</h2>
+      <div class="grid" style="margin-top:12px;">
+        <div class="card card-pad" style="box-shadow:none;">
+          <strong>Students</strong>
+          <div class="muted">Fees, attendance, notices, payments history.</div>
+        </div>
+        <div class="card card-pad" style="box-shadow:none;">
+          <strong>Teachers</strong>
+          <div class="muted">Attendance, student list, daily class updates, schedules.</div>
+        </div>
+        <div class="card card-pad" style="box-shadow:none;">
+          <strong>Admin</strong>
+          <div class="muted">Fees setup, payments, schedule uploads.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
