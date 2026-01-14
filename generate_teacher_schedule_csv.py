@@ -5,9 +5,12 @@ import re
 IN_PATH = os.path.join("Database", "schoolhub_teachers_20_class_teachers.csv")
 OUT_PATH = os.path.join("Database", "teacher_schedule.csv")
 
-# Typical BD school week (change if you want)
+# School week (change if you want)
 DAYS = ["sun", "mon", "tue", "wed", "thu"]
 PERIODS = [1, 2, 3, 4, 5, 6]
+
+SECTIONS = ["A", "B"]
+ALL_CLASS_SLOTS = [(c, s) for c in range(1, 11) for s in SECTIONS]  # 20 combos
 
 
 def parse_class_section(class_teacher_for: str) -> tuple[int, str]:
@@ -19,6 +22,18 @@ def parse_class_section(class_teacher_for: str) -> tuple[int, str]:
     if not m:
         raise ValueError(f"Invalid class_teacher_for format: {class_teacher_for}")
     return int(m.group(1)), m.group(2).upper()
+
+
+def pick_rotating_class(home: tuple[int, str], teacher_idx: int, day_idx: int, period_no: int) -> tuple[int, str]:
+    """
+    Deterministic rotation:
+    - Uses teacher index + day index + period to choose another class/section (not home).
+    """
+    base = (teacher_idx * 7 + day_idx * 3 + period_no * 5) % len(ALL_CLASS_SLOTS)
+    cand = ALL_CLASS_SLOTS[base]
+    if cand == home:
+        cand = ALL_CLASS_SLOTS[(base + 1) % len(ALL_CLASS_SLOTS)]
+    return cand
 
 
 def main() -> None:
@@ -33,18 +48,33 @@ def main() -> None:
         writer = csv.writer(f)
         writer.writerow(["teacher_phone", "weekday", "period_no", "class_no", "section"])
 
-        for t in teachers:
+        for teacher_idx, t in enumerate(teachers):
             phone = t["phone"].strip()
-            class_no, section = parse_class_section(t["class_teacher_for"])
+            home_class_no, home_section = parse_class_section(t["class_teacher_for"])
+            home = (home_class_no, home_section)
 
-            for day in DAYS:
+            for day_idx, day in enumerate(DAYS):
+                # 1 free period/day to look realistic (different per teacher/day)
+                free_period = ((teacher_idx + day_idx) % 6) + 1
+
                 for p in PERIODS:
-                    # Simple demo schedule: teacher teaches own class all 6 periods
+                    if p == free_period:
+                        # No row => UI will show '-' for this period
+                        continue
+
+                    # First 3 periods = home class (class teacher duty)
+                    if p <= 3:
+                        class_no, section = home
+                    else:
+                        # Last periods rotate to other classes (subject/support duty)
+                        class_no, section = pick_rotating_class(home, teacher_idx, day_idx, p)
+
                     writer.writerow([phone, day, p, class_no, section])
 
-    total_rows = len(teachers) * len(DAYS) * len(PERIODS)
+    total_rows = sum(1 for _ in open(OUT_PATH, "r", encoding="utf-8"))
     print(f"✅ Created: {OUT_PATH}")
-    print(f"✅ Teachers: {len(teachers)} | Days: {len(DAYS)} | Periods: {len(PERIODS)} | Rows: {total_rows}")
+    print(f"✅ Teachers: {len(teachers)} | Days: {len(DAYS)} | Periods: {len(PERIODS)}")
+    print(f"✅ CSV lines (including header): {total_rows}")
 
 
 if __name__ == "__main__":

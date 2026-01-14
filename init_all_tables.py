@@ -111,6 +111,29 @@ def main():
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         """
     )
+    # 5.5) notices (DB-backed, persistent)
+    cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS notices (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        body TEXT NOT NULL,
+        by_role ENUM('teacher','head','admin') NOT NULL,
+        by_user_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_notices_created (created_at),
+        CONSTRAINT fk_notices_user
+          FOREIGN KEY (by_user_id) REFERENCES users(id)
+          ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      """
+    )
+
+
+
+
+
+
 
     # 6) Class tables (class_01_section_01 ... class_10_section_02)
     for class_no in range(1, 11):

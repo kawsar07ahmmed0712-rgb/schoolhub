@@ -9,7 +9,7 @@
 
   <body>
     <h1>Today's Teaching Overview</h1>
-
+    
     <p><strong>Date:</strong> {{ today }} | <strong>Weekday:</strong> {{ weekday }}</p>
     <hr />
     <p>
@@ -144,6 +144,52 @@
             <td>{{ t.done }}</td>
             <td>{{ t.pending }}</td>
             <td>{{ t.percent }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <hr />
+
+    <h2>By Class</h2>
+
+    <table border="1" cellpadding="8">
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Section</th>
+          <th>Total</th>
+          <th>Done</th>
+          <th>Pending</th>
+          <th>Done %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in class_summary %}
+          <tr>
+            <td>
+              <a href="{{ url_for('head_today_overview',
+                                  teacher_id=selected_teacher_id,
+                                  class_no=c.class_no,
+                                  section=c.section,
+                                  status=selected_status) }}">
+                {{ c.class_no }}
+              </a>
+            </td>
+
+            <td>
+              <a href="{{ url_for('head_today_overview',
+                                  teacher_id=selected_teacher_id,
+                                  class_no=c.class_no,
+                                  section=c.section,
+                                  status=selected_status) }}">
+                {{ c.section }}
+              </a>
+            </td>
+            <td>{{ c.total }}</td>
+            <td>{{ c.done }}</td>
+            <td>{{ c.pending }}</td>
+            <td>{{ c.percent }}%</td>
           </tr>
         {% endfor %}
       </tbody>

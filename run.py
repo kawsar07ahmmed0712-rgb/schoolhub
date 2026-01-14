@@ -8,6 +8,7 @@ import csv
 from werkzeug.utils import secure_filename
 import io
 
+from services.notices_service import list_notices, create_notice, delete_notice
 
 
 
@@ -15,6 +16,8 @@ app = Flask(__name__)
 app.secret_key = "dev-only-secret-key-change-later"
 
 
+
+#--------------------------------------------------- FETCH - FETCH - FETCH - FETCH - FETCH  ---------------------------------------------------------------
 def fetch_user_by_phone(phone: str):
     conn = connect_db()
     cursor = conn.cursor(dictionary=True)
@@ -28,7 +31,7 @@ def fetch_user_by_phone(phone: str):
     return row
 
 
-
+#--------------------------------- FETCH ROLE PROFILE //// FETCH ROLE PROFILE
 def fetch_role_profile(user_id: int, role: str):
     """
     Returns a dict of role-specific profile info.
@@ -116,7 +119,7 @@ def fetch_role_profile(user_id: int, role: str):
 
 
 
-
+# MAIN VARIABLES / LIST / DICTIONARY ////////////////////// ROLES / ROLES / ROLES / ROLES / ROLES / ROLES/ ROLES////////////////////////////// ROLES/ ROLES/ ROLES/ ROLES/
 
 ALLOWED_ROLES = {"student", "teacher", "head", "admin"}
 
@@ -164,6 +167,11 @@ NEXT_NOTICE_ID = 1
 
 
 
+
+
+
+
+
 def normalize_role(role: str) -> str:
     if role in ALLOWED_ROLES:
         return role
@@ -175,7 +183,7 @@ def home():
 
 
 
-
+################################################## LOGIN PART - LOGIN PART - LOGIN PART ######################################################
 
 # LOGIN
 @app.get("/login")
@@ -234,7 +242,7 @@ def login_post():
 
 
 
-
+############################################## DASHBOARD PART DASHBOARD PART DASHBOARD PART ########################################################################
 
 # DASHBOARD
 @app.get("/dashboard/<role>")
@@ -257,22 +265,22 @@ def dashboard(role):
 
 # DASHBOARD PAGE
 @app.get("/dashboard/<role>/<page>")
-def dashboard_page(role, page):
+def notices(role):
     role = normalize_role(role)
+    if session.get("role") != role:
+        return redirect(url_for("login", role=role))
 
-    pages_dict = {slug: label for slug, label in ROLE_PAGES[role]}
-    if page not in pages_dict:
-        return redirect(url_for("dashboard", role=role))
-
+    can_post = role in {"teacher", "head", "admin"}
+    notices_latest_first = list_notices(limit=200)
     return render_template(
-    "page.html",
-    role=role,
-    page_title=pages_dict[page],
-    phone=session.get("phone"),
-)
+        "notices.html",
+        role=role,
+        phone=session.get("phone"),
+        can_post=can_post,
+        notices=notices_latest_first,
+    )
 
-
-
+############################## NOTICES PART NOTICES PART NOTICES PART NOTICES PART NOTICES PART ###########################################################
 # NOTICES 
 
 @app.get("/dashboard/<role>/notices")
@@ -317,20 +325,14 @@ def notices_post(role):
         )
     global NEXT_NOTICE_ID
 
-    NOTICES.append(
-        {
-            "id": NEXT_NOTICE_ID,
-            "title": title,
-            "body": body,
-            "by_role": role,
-            "by_phone": session.get("phone"),
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        }
+    create_notice(
+        title=title,
+        body=body,
+        by_user_id=int(session.get("user_id")),
+        by_role=role,
     )
-    NEXT_NOTICE_ID += 1
-
-
     return redirect(url_for("notices", role=role))
+
 
 
 
@@ -340,18 +342,18 @@ def notices_post(role):
 def notice_delete(role , notice_id):
     role = normalize_role(role)
 
-    if session.get("rle") != role:
-        return redirect(url_for("login" , role = role))
-    
-    if role not in {"teacher" , "head" , "admin"}:
-        return redirect(url_for("notices" , role))
-    
-    for i , n in enumerate(NOTICES):
-        if n["id"] == notice_id:
-            NOTICES.pop(i)
-            break
-    
-    return redirect(url_for("notices" , role = role))
+    if session.get("role") != role:
+        return redirect(url_for("login", role=role))
+
+    ok = delete_notice(
+        notice_id=int(notice_id),
+        requester_user_id=int(session.get("user_id")),
+        requester_role=role,
+    )
+    if not ok:
+        return redirect(url_for("notices", role=role))
+    return redirect(url_for("notices", role=role))
+
 
 
 
@@ -361,6 +363,8 @@ def class_table_name(class_no: int, section_letter: str) -> str:
     # Section A -> section_01, Section B -> section_02 (your DB naming)
     section_code = "01" if section_letter == "A" else "02"
     return f"class_{class_no:02d}_section_{section_code}"
+
+
 
 @app.get("/dashboard/<role>/students")
 def teacher_students(role):
@@ -703,6 +707,8 @@ def student_attendance():
 
 
 
+
+########################################### TEACHER PART TEACHER PART TEACHER PART ########################################
 @app.get("/dashboard/teacher/daily-class")
 def teacher_daily_class():
     # Only logged-in teachers can access
@@ -1248,7 +1254,7 @@ def teacher_weekly_schedule():
 
 
 
-
+########################################### HEAD TEACHER PART - HEAD TEACHER PART - HEAD TEACHER PART - HEAD TEACHER PART ########################################
 
 @app.get("/dashboard/head/today-overview")
 def head_today_overview():
@@ -1354,7 +1360,52 @@ def head_today_overview():
             )
 
         teacher_summary.sort(key=lambda x: (x["pending"], x["teacher_name"]), reverse=True)
+        # Class-wise summary (respects teacher/class/section filters, ignores status filter)
+        class_summary_map = {}
 
+        for r in data:
+            tid = str(int(r["teacher_id"]))
+            cno = str(int(r["class_no"]))
+            sec = str(r["section"])
+            is_done = int(r["is_done"]) == 1
+
+            # apply teacher/class/section filters (but NOT status)
+            if selected_teacher_id and tid != selected_teacher_id:
+                continue
+            if selected_class_no and cno != selected_class_no:
+                continue
+            if selected_section and sec != selected_section:
+                continue
+
+            key = (int(r["class_no"]), sec)
+
+            if key not in class_summary_map:
+                class_summary_map[key] = {"total": 0, "done": 0}
+
+            class_summary_map[key]["total"] += 1
+            if is_done:
+                class_summary_map[key]["done"] += 1
+
+        class_summary = []
+        for (class_no, sec), info in class_summary_map.items():
+            total = info["total"]
+            done = info["done"]
+            pending = total - done
+            percent = int((done * 100) / total) if total > 0 else 0
+
+            class_summary.append(
+                {
+                    "class_no": class_no,
+                    "section": sec,
+                    "total": total,
+                    "done": done,
+                    "pending": pending,
+                    "percent": percent,
+                }
+            )
+
+        class_summary.sort(key=lambda x: (x["pending"], x["class_no"], x["section"]), reverse=True)
+        
         # Apply ALL filters for main table (teacher/class/section/status)
         filtered = []
         for r in data:
@@ -1402,6 +1453,7 @@ def head_today_overview():
                     "section": r["section"],
                     "status": "DONE ✅" if int(r["is_done"]) == 1 else "PENDING",
                     "topic": r["topic"],
+                    
                 }
             )
 
@@ -1426,6 +1478,7 @@ def head_today_overview():
             selected_status=selected_status,
             summary=summary,
             teacher_summary=teacher_summary,
+            class_summary=class_summary,
         )
     finally:
         cursor.close()
@@ -1433,7 +1486,7 @@ def head_today_overview():
 
 
 
-
+################################################ ADMIN PART ADMIN PART ADMIN PART ADMIN PART #############################################
 @app.route("/dashboard/admin/schedule-upload", methods=["GET", "POST"])
 def admin_schedule_upload():
     if session.get("role") != "admin":
