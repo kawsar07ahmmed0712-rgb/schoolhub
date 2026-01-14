@@ -1,0 +1,37 @@
+<h2>Payments History (Admin)</h2>
+<p>Logged in as: {{ phone }}</p>
+
+<form method="GET">
+  <p>
+    Class: <input name="class_no" value="{{ filters.class_no }}" />
+    Section: <input name="section" value="{{ filters.section }}" />
+    Year: <input name="academic_year" value="{{ filters.academic_year }}" />
+    Month: <input name="fee_month" value="{{ filters.fee_month }}" />
+    Student Phone: <input name="student_phone" value="{{ filters.student_phone }}" />
+    <button type="submit">Filter</button>
+  </p>
+</form>
+
+{% if rows|length == 0 %}
+  <p>No payments found.</p>
+{% else %}
+  <table border="1" cellpadding="6">
+    <tr>
+      <th>Paid At</th><th>Student</th><th>Class</th><th>Year</th><th>Month</th><th>Paid</th><th>Receiver</th><th>Receipt</th>
+    </tr>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.paid_at }}</td>
+        <td>{{ r.student_phone }}</td>
+        <td>{{ r.class_no }}-{{ r.section }}</td>
+        <td>{{ r.academic_year }}</td>
+        <td>{{ r.fee_month }}</td>
+        <td>{{ r.paid_amount }}</td>
+        <td>{{ r.received_by_phone }}</td>
+        <td><a href="/dashboard/admin/payments/{{ r.id }}">View</a></td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endif %}
+
+<p><a href="/dashboard/admin/">← Back to Dashboard</a></p>

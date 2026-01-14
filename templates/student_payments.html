@@ -1,0 +1,25 @@
+<h2>My Payments</h2>
+<p>Logged in as: {{ phone }}</p>
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+{% if rows|length == 0 %}
+  <p>No payments found.</p>
+{% else %}
+  <table border="1" cellpadding="6">
+    <tr>
+      <th>Paid At</th><th>Year</th><th>Month</th><th>Paid</th><th>Receiver</th><th>Receipt</th>
+    </tr>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.paid_at }}</td>
+        <td>{{ r.academic_year }}</td>
+        <td>{{ r.fee_month }}</td>
+        <td>{{ r.paid_amount }}</td>
+        <td>{{ r.received_by_phone }}</td>
+        <td><a href="/dashboard/student/payments/{{ r.id }}">View</a></td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endif %}
+
+<p><a href="/dashboard/student/">← Back to Dashboard</a></p>

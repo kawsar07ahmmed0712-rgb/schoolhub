@@ -1,0 +1,30 @@
+<h2>Payment Receipt</h2>
+<p>Role: {{ role }} | Logged in as: {{ phone }}</p>
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+{% if not receipt %}
+  <p>No receipt to show.</p>
+{% else %}
+  <div style="border:1px solid #333; padding:12px; width:420px;">
+    <p><b>Receipt ID:</b> {{ receipt.id }}</p>
+    {% if receipt.student_phone %}
+      <p><b>Student:</b> {{ receipt.student_phone }}</p>
+    {% endif %}
+    <p><b>Class:</b> {{ receipt.class_no }}-{{ receipt.section }}</p>
+    <p><b>Academic Year:</b> {{ receipt.academic_year }}</p>
+    <p><b>Fee Month:</b> {{ receipt.fee_month }}</p>
+    <p><b>Plan Amount:</b> {{ receipt.plan_amount }}</p>
+    <p><b>Paid Amount:</b> {{ receipt.paid_amount }}</p>
+    <p><b>Paid At:</b> {{ receipt.paid_at }}</p>
+    <p><b>Received By:</b> {{ receipt.received_by_phone }}</p>
+    {% if receipt.note %}
+      <p><b>Note:</b> {{ receipt.note }}</p>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if role == "admin" %}
+  <p><a href="/dashboard/admin/payments_history">← Back to Payments History</a></p>
+{% else %}
+  <p><a href="/dashboard/student/payments">← Back to My Payments</a></p>
+{% endif %}

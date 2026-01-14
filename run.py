@@ -16,6 +16,12 @@ from services.fees_service import (
   record_payment,
   get_fee_status_for_student,
 )
+from services.fees_service import (
+  list_payments_admin,
+  list_payments_for_student,
+  get_payment_receipt_admin,
+  get_payment_receipt_student,
+)
 
 
 
@@ -389,6 +395,56 @@ def student_fees():
 
 
 
+@app.get("/dashboard/student/payments")
+def student_payments_history():
+  if session.get("role") != "student":
+    return redirect(url_for("login", role="student"))
+
+  user_id = session.get("user_id")
+  if user_id is None:
+    return redirect(url_for("login", role="student"))
+
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute("SELECT id FROM students WHERE user_id=%s", (int(user_id),))
+    row = cur.fetchone()
+    if not row:
+      return render_template("student_payments.html", role="student", phone=session.get("phone"), rows=[], message="Student profile not found.")
+    student_id = int(row["id"])
+  finally:
+    cur.close()
+    conn.close()
+
+  rows = list_payments_for_student(student_id=student_id, limit=200)
+  return render_template("student_payments.html", role="student", phone=session.get("phone"), rows=rows)
+
+@app.get("/dashboard/student/payments/<int:payment_id>")
+def student_payment_receipt(payment_id):
+  if session.get("role") != "student":
+    return redirect(url_for("login", role="student"))
+
+  user_id = session.get("user_id")
+  if user_id is None:
+    return redirect(url_for("login", role="student"))
+
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute("SELECT id FROM students WHERE user_id=%s", (int(user_id),))
+    row = cur.fetchone()
+    if not row:
+      return redirect(url_for("student_payments_history"))
+    student_id = int(row["id"])
+  finally:
+    cur.close()
+    conn.close()
+
+  receipt = get_payment_receipt_student(payment_id=payment_id, student_id=student_id)
+  if not receipt:
+    return render_template("payment_receipt.html", role="student", phone=session.get("phone"), receipt=None, message="Receipt not found.")
+
+  return render_template("payment_receipt.html", role="student", phone=session.get("phone"), receipt=receipt)
 
 
 
@@ -1710,6 +1766,56 @@ def admin_payments_post():
   except ValueError as e:
     return render_template("payments.html", role="admin", phone=session.get("phone"), message=f"❌ {e}")
 
+@app.get("/dashboard/admin/payments_history")
+def admin_payments_history():
+  if session.get("role") != "admin":
+    return redirect(url_for("login", role="admin"))
+
+  # optional filters from query string
+  class_no = request.args.get("class_no", "").strip()
+  section = request.args.get("section", "").strip().upper()
+  academic_year = request.args.get("academic_year", "").strip()
+  fee_month = request.args.get("fee_month", "").strip()
+  student_phone = request.args.get("student_phone", "").strip()
+
+  def to_int_or_none(s):
+    try:
+      return int(s)
+    except Exception:
+      return None
+
+  rows = list_payments_admin(
+    limit=300,
+    class_no=to_int_or_none(class_no),
+    section=section if section in {"A", "B"} else None,
+    academic_year=to_int_or_none(academic_year),
+    fee_month=to_int_or_none(fee_month),
+    student_phone=student_phone or None,
+  )
+
+  return render_template(
+    "admin_payments_history.html",
+    role="admin",
+    phone=session.get("phone"),
+    rows=rows,
+    filters={
+      "class_no": class_no,
+      "section": section,
+      "academic_year": academic_year,
+      "fee_month": fee_month,
+      "student_phone": student_phone,
+    },
+  )
+
+@app.get("/dashboard/admin/payments/<int:payment_id>")
+def admin_payment_receipt(payment_id):
+  if session.get("role") != "admin":
+    return redirect(url_for("login", role="admin"))
+
+  receipt = get_payment_receipt_admin(payment_id=payment_id)
+  if not receipt:
+    return render_template("payment_receipt.html", role="admin", phone=session.get("phone"), receipt=None, message="Receipt not found.")
+  return render_template("payment_receipt.html", role="admin", phone=session.get("phone"), receipt=receipt)
 
 
 

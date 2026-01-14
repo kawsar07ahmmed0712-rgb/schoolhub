@@ -113,3 +113,141 @@ def get_fee_status_for_student(student_id: int, class_no: int, section: str, aca
   finally:
     cur.close()
     conn.close()
+
+
+
+from typing import Optional, List, Dict
+
+def list_payments_admin(
+  limit: int = 200,
+  class_no: Optional[int] = None,
+  section: Optional[str] = None,
+  academic_year: Optional[int] = None,
+  fee_month: Optional[int] = None,
+  student_phone: Optional[str] = None,
+):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    sql = """
+      SELECT
+        pay.id,
+        pay.paid_amount,
+        DATE_FORMAT(pay.paid_at, '%Y-%m-%d %H:%i') AS paid_at,
+        pay.note,
+        p.class_no, p.section, p.academic_year, p.fee_month, p.amount AS plan_amount,
+        u.phone AS student_phone,
+        ru.phone AS received_by_phone
+      FROM fee_payments pay
+      JOIN fee_plans p ON p.id = pay.fee_plan_id
+      JOIN students s ON s.id = pay.student_id
+      JOIN users u ON u.id = s.user_id
+      JOIN users ru ON ru.id = pay.received_by_user_id
+      WHERE 1=1
+    """
+    params = []
+
+    if class_no is not None:
+      sql += " AND p.class_no=%s"
+      params.append(class_no)
+    if section is not None and section in {"A", "B"}:
+      sql += " AND p.section=%s"
+      params.append(section)
+    if academic_year is not None:
+      sql += " AND p.academic_year=%s"
+      params.append(academic_year)
+    if fee_month is not None:
+      sql += " AND p.fee_month=%s"
+      params.append(fee_month)
+    if student_phone:
+      sql += " AND u.phone=%s"
+      params.append(student_phone.strip())
+
+    sql += " ORDER BY pay.paid_at DESC, pay.id DESC LIMIT %s"
+    params.append(limit)
+
+    cur.execute(sql, tuple(params))
+    return cur.fetchall() or []
+  finally:
+    cur.close()
+    conn.close()
+
+def list_payments_for_student(student_id: int, limit: int = 200):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute(
+      """
+      SELECT
+        pay.id,
+        pay.paid_amount,
+        DATE_FORMAT(pay.paid_at, '%Y-%m-%d %H:%i') AS paid_at,
+        pay.note,
+        p.class_no, p.section, p.academic_year, p.fee_month, p.amount AS plan_amount,
+        ru.phone AS received_by_phone
+      FROM fee_payments pay
+      JOIN fee_plans p ON p.id = pay.fee_plan_id
+      JOIN users ru ON ru.id = pay.received_by_user_id
+      WHERE pay.student_id=%s
+      ORDER BY pay.paid_at DESC, pay.id DESC
+      LIMIT %s
+      """,
+      (student_id, limit),
+    )
+    return cur.fetchall() or []
+  finally:
+    cur.close()
+    conn.close()
+
+def get_payment_receipt_admin(payment_id: int):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute(
+      """
+      SELECT
+        pay.id,
+        pay.paid_amount,
+        DATE_FORMAT(pay.paid_at, '%Y-%m-%d %H:%i') AS paid_at,
+        pay.note,
+        p.class_no, p.section, p.academic_year, p.fee_month, p.amount AS plan_amount,
+        u.phone AS student_phone,
+        ru.phone AS received_by_phone
+      FROM fee_payments pay
+      JOIN fee_plans p ON p.id = pay.fee_plan_id
+      JOIN students s ON s.id = pay.student_id
+      JOIN users u ON u.id = s.user_id
+      JOIN users ru ON ru.id = pay.received_by_user_id
+      WHERE pay.id=%s
+      """,
+      (payment_id,),
+    )
+    return cur.fetchone()
+  finally:
+    cur.close()
+    conn.close()
+
+def get_payment_receipt_student(payment_id: int, student_id: int):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute(
+      """
+      SELECT
+        pay.id,
+        pay.paid_amount,
+        DATE_FORMAT(pay.paid_at, '%Y-%m-%d %H:%i') AS paid_at,
+        pay.note,
+        p.class_no, p.section, p.academic_year, p.fee_month, p.amount AS plan_amount,
+        ru.phone AS received_by_phone
+      FROM fee_payments pay
+      JOIN fee_plans p ON p.id = pay.fee_plan_id
+      JOIN users ru ON ru.id = pay.received_by_user_id
+      WHERE pay.id=%s AND pay.student_id=%s
+      """,
+      (payment_id, student_id),
+    )
+    return cur.fetchone()
+  finally:
+    cur.close()
+    conn.close()
