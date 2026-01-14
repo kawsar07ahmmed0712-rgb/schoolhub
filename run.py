@@ -26,8 +26,84 @@ from services.fees_service import (
 
 
 app = Flask(__name__)
+
+
+
+import logging
+from logging.handlers import RotatingFileHandler
+
+def setup_logging(app):
+  app.logger.setLevel(logging.INFO)
+
+  handler = RotatingFileHandler(
+    "app.log",
+    maxBytes=1_000_000,
+    backupCount=3
+  )
+  formatter = logging.Formatter(
+    "%(asctime)s | %(levelname)s | %(message)s"
+  )
+  handler.setFormatter(formatter)
+  handler.setLevel(logging.INFO)
+
+  # Flask default handlers এর সাথে duplicate না হয়
+  if not app.logger.handlers:
+    app.logger.addHandler(handler)
+  else:
+    app.logger.handlers.clear()
+    app.logger.addHandler(handler)
+
+# call it once
+setup_logging(app)
+
+
+
+@app.before_request
+def log_request():
+  try:
+    app.logger.info(f"REQ {request.method} {request.path}")
+  except Exception:
+    pass
+
+
+@app.errorhandler(404)
+def not_found(e):
+  app.logger.warning(f"404 NOT FOUND: {request.path}")
+  return render_template(
+    "error.html",
+    title="Page not found (404)",
+    message="এই পেজটা নেই। URL ঠিক আছে কিনা দেখুন।",
+    role=session.get("role"),
+    phone=session.get("phone"),
+  ), 404
+
+
+
+@app.get("/__routes")
+def __routes():
+  lines = []
+  for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
+    methods = ",".join(sorted([m for m in rule.methods if m not in {"HEAD", "OPTIONS"}]))
+    lines.append(f"{methods:10s}  {rule.rule:40s}  ->  {rule.endpoint}")
+  return "<pre>" + "\n".join(lines) + "</pre>"
+
+@app.get("/health")
+def health():
+  return {"status": "ok"}
+
+
 app.secret_key = "dev-only-secret-key-change-later"
 
+@app.errorhandler(500)
+def server_error(e):
+  app.logger.exception("500 SERVER ERROR")
+  return render_template(
+    "error.html",
+    title="Server error (500)",
+    message="সার্ভারে সমস্যা হয়েছে। app.log দেখে আমরা ধরতে পারবো কোথায়।",
+    role=session.get("role"),
+    phone=session.get("phone"),
+  ), 500
 
 
 #--------------------------------------------------- FETCH - FETCH - FETCH - FETCH - FETCH  ---------------------------------------------------------------
@@ -258,7 +334,7 @@ def login_post():
 ############################################## DASHBOARD PART DASHBOARD PART DASHBOARD PART ########################################################################
 
 # DASHBOARD
-@app.get("/dashboard/<role>")
+@app.get("/dashboard/<role>/")
 def dashboard(role):
     role = normalize_role(role)
 
@@ -276,6 +352,39 @@ def dashboard(role):
         profile=profile,
     )
 
+@app.get("/dashboard/<role>/<page>")
+def dashboard_page(role, page):
+  role = normalize_role(role)
+
+  if session.get("role") != role:
+    return redirect(url_for("login", role=role))
+
+
+  page_routes = {
+    "profile": url_for("dashboard", role=role),
+    "notices": url_for("notices", role=role),
+
+
+    "fees": url_for("student_fees"),
+    "payments_history": url_for("student_payments_history"),
+
+
+    "fees_setup": url_for("admin_fees_setup"),
+    "payments": url_for("admin_payments"),
+    "payments_history_admin": url_for("admin_payments_history"),
+  }
+
+  target = page_routes.get(page)
+  if target:
+    return redirect(target)
+
+
+  return render_template(
+    "coming_soon.html",
+    role=role,
+    phone=session.get("phone"),
+    page=page,
+  )
 
 
 ############################## NOTICES PART NOTICES PART NOTICES PART NOTICES PART NOTICES PART ###########################################################
