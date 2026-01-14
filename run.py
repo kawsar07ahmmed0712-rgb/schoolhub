@@ -1,12 +1,14 @@
-from flask import Flask, render_template, request , redirect, url_for , session , make_response
-from datetime import datetime 
-from werkzeug.security import check_password_hash 
-from db import connect_db
+from flask import Flask, render_template, request, redirect, url_for, session, make_response
 from datetime import date, timedelta, datetime
+from werkzeug.security import check_password_hash
+from db import connect_db
 import os
 import csv
 from werkzeug.utils import secure_filename
 import io
+
+from utils.db_helpers import get_student_id_by_user_id
+from utils.web_helpers import normalize_role, get_academic_year
 
 from services.notices_service import list_notices, create_notice, delete_notice
 from services.fees_service import (
@@ -92,7 +94,7 @@ def health():
   return {"status": "ok"}
 
 
-app.secret_key = "dev-only-secret-key-change-later"
+app.secret_key = os.getenv("SECRET_KEY") or os.getenv("FLASK_SECRET_KEY") or "dev-only-secret-key-change-later"
 
 @app.errorhandler(500)
 def server_error(e):
@@ -210,12 +212,11 @@ def fetch_role_profile(user_id: int, role: str):
 
 # MAIN VARIABLES / LIST / DICTIONARY ////////////////////// ROLES / ROLES / ROLES / ROLES / ROLES / ROLES/ ROLES////////////////////////////// ROLES/ ROLES/ ROLES/ ROLES/
 
-ALLOWED_ROLES = {"student", "teacher", "head", "admin"}
-
 ROLE_PAGES = {
     "student": [
         ("profile", "Profile"),
         ("fees", "Fees (Monthly)"),
+        ("payments", "My Payments"),
         ("results", "Results"),
         ("attendance", "Attendance & Leave"),
         ("notices", "Notices"),
@@ -245,14 +246,13 @@ ROLE_PAGES = {
         ("users", "Users Management"),
         ("fees_setup", "Fees Setup"),
         ("payments", "Payments"),
+        ("payments_history", "Payments History"),
         ("timetable", "Timetable"),
         ("notices", "Notices"),
         ("reports", "Reports"),
         ("schedule_upload", "Teacher Schedule Upload"),
     ],
 }
-NOTICES = []
-NEXT_NOTICE_ID = 1
 
 
 
@@ -260,11 +260,6 @@ NEXT_NOTICE_ID = 1
 
 
 
-
-def normalize_role(role: str) -> str:
-    if role in ALLOWED_ROLES:
-        return role
-    return "student"
 
 @app.get("/")
 def home():
@@ -341,9 +336,9 @@ def dashboard(role):
     if session.get("role") != role:
         return redirect(url_for("login", role=role))
 
-    pages = ROLE_PAGES[role]
     profile = fetch_role_profile(session.get("user_id"), role)
-
+    pages = ROLE_PAGES.get(role, [])
+    app.logger.info(f"DASH role={role} pages={pages}")
     return render_template(
         "dashboard.html",
         role=role,
@@ -354,6 +349,8 @@ def dashboard(role):
 
 @app.get("/dashboard/<role>/<page>")
 def dashboard_page(role, page):
+
+  app.logger.info(f"MENU role={role} page={page}")
   role = normalize_role(role)
 
   if session.get("role") != role:
@@ -363,18 +360,45 @@ def dashboard_page(role, page):
   page_routes = {
     "profile": url_for("dashboard", role=role),
     "notices": url_for("notices", role=role),
-
-
-    "fees": url_for("student_fees"),
-    "payments_history": url_for("student_payments_history"),
-
-
-    "fees_setup": url_for("admin_fees_setup"),
-    "payments": url_for("admin_payments"),
-    "payments_history_admin": url_for("admin_payments_history"),
   }
 
+  if role == "student":
+    page_routes.update(
+      {
+        "fees": url_for("student_fees"),
+        "payments": url_for("student_payments_history"),
+        "attendance": url_for("student_attendance"),
+      }
+    )
+  elif role == "teacher":
+    page_routes.update(
+      {
+        "students": url_for("teacher_students", role="teacher"),
+        "attendance": url_for("teacher_attendance", role="teacher"),
+        "today_schedule": url_for("teacher_today_schedule"),
+        "weekly_schedule": url_for("teacher_weekly_schedule"),
+        "daily_class": url_for("teacher_daily_class"),
+      }
+    )
+  elif role == "head":
+    page_routes.update(
+      {
+        "today_overview": url_for("head_today_overview"),
+      }
+    )
+  elif role == "admin":
+    page_routes.update(
+      {
+        "fees_setup": url_for("admin_fees_setup"),
+        "payments": url_for("admin_payments"),
+        "payments_history": url_for("admin_payments_history"),
+        "schedule_upload": url_for("admin_schedule_upload"),
+      }
+    )
+
   target = page_routes.get(page)
+  app.logger.info(f"MENU target={target}")
+
   if target:
     return redirect(target)
 
@@ -479,19 +503,14 @@ def student_fees():
     return render_template("fees.html", role="student", phone=session.get("phone"), rows=[], message="Class not assigned yet.")
 
   student_user_id = session.get("user_id")
-  conn = connect_db()
-  cur = conn.cursor(dictionary=True)
-  try:
-    cur.execute("SELECT id FROM students WHERE user_id=%s", (student_user_id,))
-    s = cur.fetchone()
-    if not s:
-      return render_template("fees.html", role="student", phone=session.get("phone"), rows=[], message="Student profile not found.")
-    student_id = s["id"]
-  finally:
-    cur.close()
-    conn.close()
+  if student_user_id is None:
+    return redirect(url_for("login", role="student"))
 
-  academic_year = datetime.now().year
+  student_id = get_student_id_by_user_id(int(student_user_id))
+  if not student_id:
+    return render_template("fees.html", role="student", phone=session.get("phone"), rows=[], message="Student profile not found.")
+
+  academic_year = get_academic_year()
   rows = get_fee_status_for_student(
     student_id=student_id,
     class_no=int(profile["class_no"]),
@@ -513,17 +532,9 @@ def student_payments_history():
   if user_id is None:
     return redirect(url_for("login", role="student"))
 
-  conn = connect_db()
-  cur = conn.cursor(dictionary=True)
-  try:
-    cur.execute("SELECT id FROM students WHERE user_id=%s", (int(user_id),))
-    row = cur.fetchone()
-    if not row:
-      return render_template("student_payments.html", role="student", phone=session.get("phone"), rows=[], message="Student profile not found.")
-    student_id = int(row["id"])
-  finally:
-    cur.close()
-    conn.close()
+  student_id = get_student_id_by_user_id(int(user_id))
+  if not student_id:
+    return render_template("student_payments.html", role="student", phone=session.get("phone"), rows=[], message="Student profile not found.")
 
   rows = list_payments_for_student(student_id=student_id, limit=200)
   return render_template("student_payments.html", role="student", phone=session.get("phone"), rows=rows)
@@ -537,17 +548,9 @@ def student_payment_receipt(payment_id):
   if user_id is None:
     return redirect(url_for("login", role="student"))
 
-  conn = connect_db()
-  cur = conn.cursor(dictionary=True)
-  try:
-    cur.execute("SELECT id FROM students WHERE user_id=%s", (int(user_id),))
-    row = cur.fetchone()
-    if not row:
-      return redirect(url_for("student_payments_history"))
-    student_id = int(row["id"])
-  finally:
-    cur.close()
-    conn.close()
+  student_id = get_student_id_by_user_id(int(user_id))
+  if not student_id:
+    return redirect(url_for("student_payments_history"))
 
   receipt = get_payment_receipt_student(payment_id=payment_id, student_id=student_id)
   if not receipt:
@@ -818,7 +821,7 @@ def teacher_attendance(role):
                 students=students,
                 date_str=attendance_date,
                 status_map=status_map,
-                message="✅ Attendance saved successfully!",
+                message="Attendance saved successfully.",
             )
 
         # GET: Just show page
@@ -1386,7 +1389,7 @@ def teacher_today_schedule():
 
         message = None
         if request.args.get("saved") == "1":
-            message = "✅ Saved!"
+            message = "Saved."
         elif not slots:
             message = "No schedule found for today. (Add schedule slots first.)"
 
@@ -1662,7 +1665,7 @@ def head_today_overview():
                     "period_no": r["period_no"],
                     "class_no": r["class_no"],
                     "section": r["section"],
-                    "status": "DONE ✅" if int(r["is_done"]) == 1 else "PENDING",
+                    "status": "DONE" if int(r["is_done"]) == 1 else "PENDING",
                     "topic": r["topic"],
                     
                 }
@@ -1728,7 +1731,7 @@ def admin_schedule_upload():
 
         try:
             report = import_teacher_schedule_csv_to_db(save_path, dry_run=dry_run)
-            message = "✅ Import completed."
+            message = "Import completed."
         except Exception as e:
             message = f"❌ Import failed: {e}"
 
@@ -1781,7 +1784,7 @@ def admin_schedule_clear():
         cursor.close()
         conn.close()
 
-    return redirect(url_for("admin_schedule_upload", msg="✅ All teacher schedule slots cleared."))
+    return redirect(url_for("admin_schedule_upload", msg="All teacher schedule slots cleared."))
 
 
 @app.post("/dashboard/admin/today-logs-clear")
@@ -1808,7 +1811,7 @@ def admin_today_logs_clear():
         cursor.close()
         conn.close()
 
-    return redirect(url_for("admin_schedule_upload", msg="✅ Today's teacher lesson logs cleared."))
+    return redirect(url_for("admin_schedule_upload", msg="Today's teacher lesson logs cleared."))
 
 
 @app.get("/dashboard/admin/fees_setup")
@@ -1825,12 +1828,12 @@ def admin_fees_setup_post():
   try:
     class_no = int(request.form.get("class_no", "0"))
     section = request.form.get("section", "A").strip()
-    academic_year = int(request.form.get("academic_year", str(datetime.now().year)))
+    academic_year = int(request.form.get("academic_year", str(get_academic_year())))
     fee_month = int(request.form.get("fee_month", "0"))
     amount = int(request.form.get("amount", "0"))
 
     create_fee_plan(class_no, section, academic_year, fee_month, amount)
-    return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message="✅ Fee plan saved!")
+    return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message="Fee plan saved!")
   except ValueError as e:
     return render_template("fees_setup.html", role="admin", phone=session.get("phone"), message=f"❌ {e}")
 
@@ -1850,7 +1853,7 @@ def admin_payments_post():
     student_phone = request.form.get("student_phone", "").strip()
     class_no = int(request.form.get("class_no", "0"))
     section = request.form.get("section", "A").strip()
-    academic_year = int(request.form.get("academic_year", str(datetime.now().year)))
+    academic_year = int(request.form.get("academic_year", str(get_academic_year())))
     fee_month = int(request.form.get("fee_month", "0"))
     paid_amount = int(request.form.get("paid_amount", "0"))
     note = request.form.get("note", "")
@@ -1871,7 +1874,7 @@ def admin_payments_post():
       received_by_user_id=int(session.get("user_id")),
       note=note,
     )
-    return render_template("payments.html", role="admin", phone=session.get("phone"), message="✅ Payment recorded!")
+    return render_template("payments.html", role="admin", phone=session.get("phone"), message="Payment recorded!")
   except ValueError as e:
     return render_template("payments.html", role="admin", phone=session.get("phone"), message=f"❌ {e}")
 
@@ -1936,6 +1939,9 @@ def logout():
     return redirect(url_for("home"))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    debug = os.getenv("FLASK_DEBUG", "0").strip() == "1"
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "5000"))
+    app.run(debug=debug, host=host, port=port)
 
 

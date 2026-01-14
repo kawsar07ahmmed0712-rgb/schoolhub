@@ -1,7 +1,19 @@
-<h2>Coming Soon</h2>
-<p>Role: {{ role }}</p>
-<p>Logged in as: {{ phone }}</p>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SchoolHub - Coming Soon</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
 
-<p><b>{{ page }}</b> page এখনো তৈরি হয়নি 🙂</p>
+  <body>
+    <h2>Coming Soon</h2>
+    <p>Role: {{ role }}</p>
+    <p>Logged in as: {{ phone }}</p>
 
-<p><a href="/dashboard/{{ role }}/">← Back to Dashboard</a></p>
+    <p><b>{{ page }}</b> page is coming soon.</p>
+
+    <p><a href="/dashboard/{{ role }}/">← Back to Dashboard</a></p>
+  </body>
+</html>

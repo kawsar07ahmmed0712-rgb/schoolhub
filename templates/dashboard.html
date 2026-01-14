@@ -11,7 +11,7 @@
   <body>
     <h1>{{ role|capitalize }} Dashboard</h1>
     {% if phone %}
-      <p>Welcome, {{ phone }} ✅</p>
+      <p>Welcome, {{ phone }}.</p>
         {% if profile %}
           <hr />
           <h2>Profile Summary</h2>
@@ -49,93 +49,10 @@
         {% endif %}
     {% endif %}
 
-
-    <p>This is a placeholder dashboard page.</p>
-
-<h2>Menu</h2>
-
+    <h2>Menu</h2>
     <ul>
       {% for slug, label in pages %}
-        <li>
-          {% if slug == 'notices' %}
-            <a href="{{ url_for('notices', role=role) }}">{{ label }}</a>
-
-        <!-- Student Start-->
-          {% elif role == 'student' and slug == 'attendance' %}
-            <a href="{{ url_for('student_attendance') }}">{{ label }}</a>
-
-        <!-- Student End-->
-
-
-
-
-        <!-- Teacher Start-->
-
-              <!-- teacher: Daily classe-->
-          {% elif role == 'teacher' and slug == 'daily_class' %}
-            <a href="{{ url_for('teacher_daily_class') }}">{{ label }}</a>   
-            
-            
-              <!-- teacher: teacher_students-->    
-          {% elif role == 'teacher' and slug == 'students' %}
-            <a href="{{ url_for('teacher_students', role=role) }}">{{ label }}</a>
-
-
-              <!-- teacher: teacher_attendance-->
-          {% elif role == 'teacher' and slug == 'attendance' %}
-            <a href="{{ url_for('teacher_attendance', role=role) }}">{{ label }}</a>
-
-
-              <!-- teacher: teacher_today_schedule-->
-          {% elif role == 'teacher' and slug == 'today_schedule' %}
-            <a href="{{ url_for('teacher_today_schedule') }}">{{ label }}</a>
-
-
-              <!-- teacher: teacher_weekly_schedule-->
-          {% elif role == 'teacher' and slug == 'weekly_schedule' %}
-            <a href="{{ url_for('teacher_weekly_schedule') }}">{{ label }}</a>
-
-
-            
-        <!-- Teacher End -->
-          
-
-
-
-
-
-        <!-- Head Start -->
-
-
-          {% elif role == 'head' and slug == 'today_overview' %}
-            <a href="{{ url_for('head_today_overview') }}">{{ label }}</a>
-
-        
-
-
-        <!-- Head End -->
-
-        
-
-
-
-
-
-        <!-- Admin Start -->
-          {% elif role == 'admin' and slug == 'schedule_upload' %}
-            <a href="{{ url_for('admin_schedule_upload') }}">{{ label }}</a>
-
-        <!-- Admin End -->
-
-
-
-
-
-
-          {% else %}
-            <a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a>
-          {% endif %}
-        </li>
+        <li><a href="{{ url_for('dashboard_page', role=role, page=slug) }}">{{ label }}</a></li>
       {% endfor %}
     </ul>
 
