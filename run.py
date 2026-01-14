@@ -263,97 +263,82 @@ def dashboard(role):
         profile=profile,
     )
 
-# DASHBOARD PAGE
-@app.get("/dashboard/<role>/<page>")
-def notices(role):
-    role = normalize_role(role)
-    if session.get("role") != role:
-        return redirect(url_for("login", role=role))
 
-    can_post = role in {"teacher", "head", "admin"}
-    notices_latest_first = list_notices(limit=200)
-    return render_template(
-        "notices.html",
-        role=role,
-        phone=session.get("phone"),
-        can_post=can_post,
-        notices=notices_latest_first,
-    )
 
 ############################## NOTICES PART NOTICES PART NOTICES PART NOTICES PART NOTICES PART ###########################################################
 # NOTICES 
 
 @app.get("/dashboard/<role>/notices")
 def notices(role):
-    role = normalize_role(role)
+  role = normalize_role(role)
+  if session.get("role") != role:
+    return redirect(url_for("login", role=role))
 
-    if session.get("role") != role:
-        return redirect(url_for("login", role=role))
+  can_post = role in {"teacher", "head", "admin"}
+  notices_latest_first = list_notices()
 
-    can_post = role in {"teacher", "head", "admin"}
-    notices_latest_first = list(reversed(NOTICES))
-    return render_template(
+  return render_template(
     "notices.html",
     role=role,
     phone=session.get("phone"),
     can_post=can_post,
     notices=notices_latest_first,
-)
+  )
+
 @app.post("/dashboard/<role>/notices")
 def notices_post(role):
-    role = normalize_role(role)
+  role = normalize_role(role)
+  if session.get("role") != role:
+    return redirect(url_for("login", role=role))
 
-    if session.get("role") != role:
-        return redirect(url_for("login", role=role))
-
-    if role not in {"teacher", "head", "admin"}:
-        return redirect(url_for("notices", role=role))
-
-    title = request.form.get("title", "").strip()
-    body = request.form.get("body", "").strip()
-
-    if title == "" or body == "":
-        return render_template(
-            "notices.html",
-            role=role,
-            phone=session.get("phone"),
-            can_post=True,
-            notices=list(reversed(NOTICES)),
-            message="Title and body are required.",
-            title=title,
-            body=body,
-        )
-    global NEXT_NOTICE_ID
-
-    create_notice(
-        title=title,
-        body=body,
-        by_user_id=int(session.get("user_id")),
-        by_role=role,
-    )
+  if role not in {"teacher", "head", "admin"}:
     return redirect(url_for("notices", role=role))
 
+  title = request.form.get("title", "")
+  body = request.form.get("body", "")
 
-
-
-
+  try:
+    create_notice(
+      title=title,
+      body=body,
+      by_user_id=int(session.get("user_id")),
+      by_role=role,
+      by_phone=session.get("phone"),
+    )
+    return redirect(url_for("notices", role=role))
+  except ValueError as e:
+    # validation error: same page show message + old input
+    return render_template(
+      "notices.html",
+      role=role,
+      phone=session.get("phone"),
+      can_post=True,
+      notices=list_notices(),
+      message=str(e),
+      title=title,
+      body=body,
+    )
 
 @app.post("/dashboard/<role>/notices/<int:notice_id>/delete")
-def notice_delete(role , notice_id):
-    role = normalize_role(role)
+def notice_delete(role, notice_id):
+  role = normalize_role(role)
 
-    if session.get("role") != role:
-        return redirect(url_for("login", role=role))
+  if session.get("role") != role:
+    return redirect(url_for("login", role=role))
 
-    ok = delete_notice(
-        notice_id=int(notice_id),
-        requester_user_id=int(session.get("user_id")),
-        requester_role=role,
-    )
-    if not ok:
-        return redirect(url_for("notices", role=role))
+  if role not in {"teacher", "head", "admin"}:
     return redirect(url_for("notices", role=role))
 
+  requester_user_id = session.get("user_id")
+  if requester_user_id is None:
+    return redirect(url_for("login", role=role))
+
+  delete_notice(
+    notice_id=notice_id,
+    requester_role=role,
+    requester_user_id=int(requester_user_id),
+  )
+  return redirect(url_for("notices", role=role))
 
 
 

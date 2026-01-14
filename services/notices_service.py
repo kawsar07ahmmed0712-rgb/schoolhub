@@ -1,61 +1,86 @@
+from typing import List, Dict, Optional
 from db import connect_db
 
-ALLOWED_NOTICE_ROLES = {"teacher", "head", "admin"}
+MAX_TITLE_LEN = 200
+MAX_BODY_LEN = 5000
 
-def list_notices(limit: int = 100):
-    conn = connect_db()
-    cur = conn.cursor(dictionary=True)
-    try:
-        cur.execute(
-            """
-            SELECT n.id, n.title, n.body, n.by_role,
-                   u.phone AS by_phone,
-                   DATE_FORMAT(n.created_at, '%Y-%m-%d %H:%i') AS created_at
-            FROM notices n
-            JOIN users u ON u.id = n.by_user_id
-            ORDER BY n.created_at DESC
-            LIMIT %s
-            """,
-            (limit,),
-        )
-        return cur.fetchall()
-    finally:
-        cur.close()
-        conn.close()
+def _clean_text(s: str, max_len: int) -> str:
+  s = (s or "").strip()
+  if len(s) > max_len:
+    s = s[:max_len]
+  return s
 
-def create_notice(title: str, body: str, by_user_id: int, by_role: str):
-    if by_role not in ALLOWED_NOTICE_ROLES:
-        raise ValueError("Role not allowed to post notices.")
-    conn = connect_db()
-    cur = conn.cursor()
-    try:
-        cur.execute(
-            "INSERT INTO notices (title, body, by_role, by_user_id) VALUES (%s,%s,%s,%s)",
-            (title, body, by_role, by_user_id),
-        )
-        conn.commit()
-        return cur.lastrowid
-    finally:
-        cur.close()
-        conn.close()
+def list_notices(limit: int = 200) -> List[Dict]:
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute(
+      """
+      SELECT id, title, body, by_role, by_phone, created_at
+      FROM notices
+      ORDER BY created_at DESC, id DESC
+      LIMIT %s
+      """,
+      (limit,)
+    )
+    rows = cur.fetchall() or []
+    # created_at কে template-friendly string বানাই
+    for r in rows:
+      if r.get("created_at") is not None:
+        r["created_at"] = r["created_at"].strftime("%Y-%m-%d %H:%M")
+    return rows
+  finally:
+    cur.close()
+    conn.close()
 
+def create_notice(
+  title: str,
+  body: str,
+  by_user_id: int,
+  by_role: str,
+  by_phone: str
+) -> int:
+  title = _clean_text(title, MAX_TITLE_LEN)
+  body = _clean_text(body, MAX_BODY_LEN)
 
+  if title == "" or body == "":
+    raise ValueError("Title and body are required.")
 
-def delete_notice(notice_id: int, requester_user_id: int, requester_role: str):
-    conn = connect_db()
-    cur = conn.cursor(dictionary=True)
-    try:
-        cur.execute("SELECT by_user_id FROM notices WHERE id=%s", (notice_id,))
-        row = cur.fetchone()
-        if not row:
-            return False
-        owner_id = int(row["by_user_id"])
-        if requester_role == "teacher" and owner_id != requester_user_id:
-            return False
-        cur.execute("DELETE FROM notices WHERE id=%s", (notice_id,))
-        conn.commit()
-        return True
-    finally:
-        cur.close()
-        conn.close()
+  conn = connect_db()
+  cur = conn.cursor()
+  try:
+    cur.execute(
+      """
+      INSERT INTO notices (title, body, by_user_id, by_role, by_phone, created_at)
+      VALUES (%s, %s, %s, %s, %s, NOW())
+      """,
+      (title, body, by_user_id, by_role, by_phone)
+    )
+    conn.commit()
+    return cur.lastrowid
+  finally:
+    cur.close()
+    conn.close()
 
+def delete_notice(notice_id: int, requester_role: str, requester_user_id: int) -> bool:
+  """
+  Permission:
+  - teacher: only delete own notices
+  - head/admin: delete any
+  """
+  conn = connect_db()
+  cur = conn.cursor()
+  try:
+    if requester_role == "teacher":
+      cur.execute(
+        "DELETE FROM notices WHERE id=%s AND by_user_id=%s",
+        (notice_id, requester_user_id)
+      )
+    else:
+      cur.execute("DELETE FROM notices WHERE id=%s", (notice_id,))
+
+    conn.commit()
+    return cur.rowcount > 0
+  finally:
+    cur.close()
+    conn.close()

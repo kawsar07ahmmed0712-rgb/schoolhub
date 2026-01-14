@@ -111,22 +111,20 @@ def main():
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         """
     )
-    # 5.5) notices (DB-backed, persistent)
     cursor.execute(
-      """
-      CREATE TABLE IF NOT EXISTS notices (
+    """
+    CREATE TABLE IF NOT EXISTS notices (
         id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(200) NOT NULL,
         body TEXT NOT NULL,
-        by_role ENUM('teacher','head','admin') NOT NULL,
         by_user_id INT NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_notices_created (created_at),
-        CONSTRAINT fk_notices_user
-          FOREIGN KEY (by_user_id) REFERENCES users(id)
-          ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-      """
+        by_role ENUM('teacher','head','admin') NOT NULL,
+        by_phone VARCHAR(20) NOT NULL,
+        created_at DATETIME NOT NULL,
+        INDEX idx_created_at (created_at),
+        CONSTRAINT fk_notices_user FOREIGN KEY (by_user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """
     )
 
 
