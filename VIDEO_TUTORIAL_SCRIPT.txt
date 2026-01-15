@@ -6,11 +6,16 @@ It is created with:
 - Flask
 - MySQL (Database)
 - A modern, animated UI (web app)
+- New AI Insights (dropout risk + score forecasting) powered by bundled Kaggle datasets
+- Gemini Study Assistant for students (Gemini API key in .env)
+- Automated AI workflow for teachers -> head (risk buckets)
 
 As we go ahead I will:
 1) Show the full UI (how the website looks and works)
 2) Then I will show the code structure in VS Code
-3) Finally, I will explain how you can run it locally using the README roadmap
+3) Show the AI Insights page (two ready-to-use ML widgets)
+3.5) Show the student Gemini assistant + automated AI buckets for head
+4) Finally, explain how you can run it locally using the README roadmap and the new `python manage.py train-ml` command
 
 Unfortunately, I could not deploy it (I tried, but I could not finish deployment yet).
 In the next upgraded version, I will improve more features and deploy it properly.
@@ -22,10 +27,13 @@ In the next upgraded version, I will improve more features and deploy it properl
 
 Step 1: Open terminal (PowerShell / Git Bash)
 
-Step 2: Run the server:
+Step 2: (Optional but recommended) Train the ML models from the bundled datasets:
+python manage.py train-ml
+
+Step 3: Run the server:
 python manage.py run --debug
 
-Step 3: Ctrl + click the URL in terminal, or open in browser:
+Step 4: Ctrl + click the URL in terminal, or open in browser:
 http://127.0.0.1:5000/
 
 Now you will see the landing page with 4 roles:
@@ -55,6 +63,12 @@ Student modules (what you can test):
 
 1) Profile
    - Shows profile summary and basic student information.
+
+2) AI Insights
+   - New page with two ML forms:
+     a) Dropout risk (numeric inputs; logistic regression; shows probability bars)
+     b) Score forecaster (select inputs; random forest; shows predicted band)
+   - Uses the bundled Kaggle datasets (already included under ML-Dataset/).
 
 2) Fees (Monthly)
    - Shows month-wise fee status: total amount, paid, and due.
@@ -93,7 +107,7 @@ Step 3: Login using the demo Teacher credentials from README.md.
 Teacher Dashboard modules:
 
 1) Student List
-   - Shows students of the teacher’s assigned class/section.
+   - Shows students of the teacher's assigned class/section.
    - Includes search by name/phone.
 
 2) Take Attendance
@@ -103,7 +117,7 @@ Teacher Dashboard modules:
    - Teacher updates per period: topic/homework/notes.
 
 4) Today's Schedule
-   - Teacher sees today’s periods (1–6) from schedule slots.
+   - Teacher sees today's periods (1-6) from schedule slots.
    - Teacher can mark a period as done and write topic/homework/notes.
 
 5) Weekly Schedule
@@ -120,7 +134,9 @@ Teacher Dashboard modules:
 
 8) Leave Approvals
    - Teacher can approve/reject pending leave requests
-     (for the teacher’s assigned class/section)
+     (for the teacher's assigned class/section)
+9) AI Insights
+   - Same ML widgets available for teachers to triage risk before parent calls.
 
 
 ============================================================
@@ -145,7 +161,7 @@ Step 7: Confirm the notice is visible
 
 Step 1: Login as Teacher
 Step 2: Open "Take Attendance"
-Step 3: Choose today’s date and save
+Step 3: Choose today's date and save
 Step 4: Logout
 
 Step 5: Login as Student
@@ -187,6 +203,8 @@ Admin modules:
 
 7) Reports
    - Quick database statistics (users, students, teachers, notices, payments, pending leaves)
+8) AI Insights
+   - Admins can also open AI Insights to see the ML demos; models are pre-trained after running `python manage.py train-ml`
 
 
 ============================================================
@@ -220,14 +238,25 @@ Head Teacher modules:
 
 5) Reports
    - Progress overview and summary stats (today logs, leaves, exams)
+6) AI Insights
+   - Use AI Insights to forecast which students may need extra support before exams
 
 
 ============================================================
-8) FINAL NOTE
+8) QUICK TIP: AI INSIGHTS PAGE
+============================================================
+- Works offline using the bundled datasets in `ML-Dataset/`.
+- Two models:
+  1) Dropout predictor (logistic regression, numeric form)
+  2) Score forecaster (random forest regressor, select dropdowns)
+- Artifacts saved to `services/ml_artifacts/` after `python manage.py train-ml`.
+
+
+============================================================
+9) FINAL NOTE
 ============================================================
 
 This project is a learning + showcase project.
 For local running instructions, please follow README.md step-by-step.
 
 Thank you for watching!
-

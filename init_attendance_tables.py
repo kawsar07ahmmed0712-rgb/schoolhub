@@ -45,7 +45,7 @@ def main():
     conn.commit()
     cursor.close()
     conn.close()
-    print("✅ Attendance tables ensured")
+    print("OK. Attendance tables ensured")
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,59 @@
+{
+  "trained_at": "2026-01-15T13:01:38.372184Z",
+  "metrics": {
+    "accuracy": 0.768361581920904,
+    "f1_weighted": 0.7549006090888183
+  },
+  "features": [
+    "admission_grade",
+    "age_at_enrollment",
+    "first_sem_enrolled",
+    "first_sem_approved",
+    "first_sem_grade",
+    "second_sem_enrolled",
+    "second_sem_approved",
+    "second_sem_grade",
+    "tuition_paid",
+    "scholarship_holder",
+    "debtor",
+    "international",
+    "gender"
+  ],
+  "source_columns": {
+    "admission_grade": "Admission grade",
+    "age_at_enrollment": "Age at enrollment",
+    "first_sem_enrolled": "Curricular units 1st sem (enrolled)",
+    "first_sem_approved": "Curricular units 1st sem (approved)",
+    "first_sem_grade": "Curricular units 1st sem (grade)",
+    "second_sem_enrolled": "Curricular units 2nd sem (enrolled)",
+    "second_sem_approved": "Curricular units 2nd sem (approved)",
+    "second_sem_grade": "Curricular units 2nd sem (grade)",
+    "tuition_paid": "Tuition fees up to date",
+    "scholarship_holder": "Scholarship holder",
+    "debtor": "Debtor",
+    "international": "International",
+    "gender": "Gender"
+  },
+  "defaults": {
+    "Admission grade": 126.1,
+    "Age at enrollment": 20.0,
+    "Curricular units 1st sem (enrolled)": 6.0,
+    "Curricular units 1st sem (approved)": 5.0,
+    "Curricular units 1st sem (grade)": 12.285714285714286,
+    "Curricular units 2nd sem (enrolled)": 6.0,
+    "Curricular units 2nd sem (approved)": 5.0,
+    "Curricular units 2nd sem (grade)": 12.2,
+    "Tuition fees up to date": 1.0,
+    "Scholarship holder": 0.0,
+    "Debtor": 0.0,
+    "International": 0.0,
+    "Gender": 0.0
+  },
+  "classes": [
+    "Dropout",
+    "Enrolled",
+    "Graduate"
+  ],
+  "dataset_rows": 4424,
+  "dataset_path": "C:\\Users\\USER\\DATA-SCINCE-AI\\INCEPTION_BD_WORKSPACE\\FSDS_BOOTCAMP\\Projects\\schoolhub\\ML-Dataset\\extracted\\archive6\\data.csv"
+}

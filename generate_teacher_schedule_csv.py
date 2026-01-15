@@ -72,9 +72,9 @@ def main() -> None:
                     writer.writerow([phone, day, p, class_no, section])
 
     total_rows = sum(1 for _ in open(OUT_PATH, "r", encoding="utf-8"))
-    print(f"✅ Created: {OUT_PATH}")
-    print(f"✅ Teachers: {len(teachers)} | Days: {len(DAYS)} | Periods: {len(PERIODS)}")
-    print(f"✅ CSV lines (including header): {total_rows}")
+    print(f"OK. Created: {OUT_PATH}")
+    print(f"OK. Teachers: {len(teachers)} | Days: {len(DAYS)} | Periods: {len(PERIODS)}")
+    print(f"OK. CSV lines (including header): {total_rows}")
 
 
 if __name__ == "__main__":

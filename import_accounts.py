@@ -101,7 +101,7 @@ def ensure_headmaster(cursor, user_id: int, authentication_id: str, name: str):
 
 def import_teachers(cursor) -> int:
     if not os.path.exists(TEACHERS_CSV):
-        print(f"❌ Teachers CSV not found: {TEACHERS_CSV}")
+        print(f"ERROR: Teachers CSV not found: {TEACHERS_CSV}")
         return 0
 
     count = 0
@@ -127,7 +127,7 @@ def import_teachers(cursor) -> int:
 
 def import_admin(cursor) -> int:
     if not os.path.exists(ADMIN_CSV):
-        print(f"❌ Admin CSV not found: {ADMIN_CSV}")
+        print(f"ERROR: Admin CSV not found: {ADMIN_CSV}")
         return 0
 
     count = 0
@@ -148,7 +148,7 @@ def import_admin(cursor) -> int:
 
 def import_headmaster(cursor) -> int:
     if not os.path.exists(HEADMASTER_CSV):
-        print(f"❌ Headmaster CSV not found: {HEADMASTER_CSV}")
+        print(f"ERROR: Headmaster CSV not found: {HEADMASTER_CSV}")
         return 0
 
     count = 0
@@ -180,10 +180,10 @@ def main():
     cursor.close()
     conn.close()
 
-    print(f"✅ Imported teachers rows processed: {t}")
-    print(f"✅ Imported admin rows processed: {a}")
-    print(f"✅ Imported headmaster rows processed: {h}")
-    print("✅ Done")
+    print(f"OK. Imported teachers rows processed: {t}")
+    print(f"OK. Imported admin rows processed: {a}")
+    print(f"OK. Imported headmaster rows processed: {h}")
+    print("OK. Done")
 
 
 if __name__ == "__main__":

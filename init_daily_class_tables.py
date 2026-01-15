@@ -52,7 +52,7 @@ def main():
     cursor.close()
     conn.close()
 
-    print("✅ Daily class tables ensured: daily_class_days, daily_class_periods")
+    print("OK. Daily class tables ensured: daily_class_days, daily_class_periods")
 
 if __name__ == "__main__":
     main()

@@ -14,7 +14,7 @@ def main():
     cursor.close()
     conn.close()
 
-    print(f"✅ Database ensured: {db_name}")
+    print(f"OK. Database ensured: {db_name}")
 
 
 if __name__ == "__main__":

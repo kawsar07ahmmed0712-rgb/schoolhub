@@ -1,0 +1,59 @@
+{
+  "trained_at": "2026-01-15T13:01:38.892818Z",
+  "metrics": {
+    "mae": 11.49983968158154,
+    "r2": -0.02767888259587936
+  },
+  "features": [
+    "gender",
+    "race_ethnicity",
+    "parent_education",
+    "lunch",
+    "test_prep"
+  ],
+  "source_columns": {
+    "gender": "gender",
+    "race_ethnicity": "race/ethnicity",
+    "parent_education": "parental level of education",
+    "lunch": "lunch",
+    "test_prep": "test preparation course"
+  },
+  "defaults": {
+    "gender": "female",
+    "race_ethnicity": "group C",
+    "parent_education": "some college",
+    "lunch": "standard",
+    "test_prep": "none"
+  },
+  "choices": {
+    "gender": [
+      "female",
+      "male"
+    ],
+    "race_ethnicity": [
+      "group A",
+      "group B",
+      "group C",
+      "group D",
+      "group E"
+    ],
+    "parent_education": [
+      "associate's degree",
+      "bachelor's degree",
+      "high school",
+      "master's degree",
+      "some college",
+      "some high school"
+    ],
+    "lunch": [
+      "free/reduced",
+      "standard"
+    ],
+    "test_prep": [
+      "completed",
+      "none"
+    ]
+  },
+  "dataset_rows": 1000,
+  "dataset_path": "C:\\Users\\USER\\DATA-SCINCE-AI\\INCEPTION_BD_WORKSPACE\\FSDS_BOOTCAMP\\Projects\\schoolhub\\ML-Dataset\\extracted\\archive7\\StudentsPerformance.csv"
+}

@@ -1,0 +1,91 @@
+{% set page_title = "Daily Diary" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Daily Diary</h1>
+      {% if student_name %}
+        <p class="muted"><strong>Student:</strong> {{ student_name }}{% if roll %} · <strong>Roll:</strong> {{ roll }}{% endif %}</p>
+      {% endif %}
+      {% if class_no and section %}
+        <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }} · <strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
+      {% else %}
+        <p class="muted"><strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
+      {% endif %}
+
+      <form method="get" action="{{ url_for('student_daily_class') }}" class="form-row" style="margin-top: 12px;">
+        <div class="grid grid-2">
+          <div>
+            <label for="date">Pick date</label>
+            <input id="date" name="date" type="date" value="{{ date }}" />
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px; justify-content:flex-end;">
+            <button class="btn btn-primary" type="submit">Load</button>
+            <a class="btn btn-ghost" href="{{ url_for('student_daily_class') }}">Today</a>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    {% if class_teacher %}
+      <section class="card card-pad">
+        <h2>Class Teacher</h2>
+        <p class="muted">
+          <strong>{{ class_teacher.teacher_name }}</strong>
+          · {{ class_teacher.teacher_phone }}
+          · <span class="badge">{{ class_teacher.teacher_code }}</span>
+        </p>
+      </section>
+    {% endif %}
+
+    <section class="card card-pad">
+      <h2>Periods (1–6)</h2>
+      <p class="muted">Topic, homework, and notes published by your class teacher.</p>
+
+      {% if periods %}
+        <div class="grid grid-2" style="margin-top: 12px;">
+          {% for p in periods %}
+            <div class="card card-pad" style="box-shadow:none;">
+              <div style="display:flex; justify-content: space-between; gap: 10px; align-items:center; flex-wrap: wrap;">
+                <div style="font-weight: 760;">Period {{ p.period_no }}</div>
+                <span class="badge">{% if p.has_update %}Updated{% else %}Empty{% endif %}</span>
+              </div>
+
+              <div class="muted" style="font-size: 12px; margin-top: 6px;">
+                Scheduled teacher: <strong>{{ p.teacher_name }}</strong> · {{ p.teacher_phone }}
+              </div>
+
+              {% if p.has_update %}
+                <div style="margin-top: 10px;">
+                  {% if p.topic %}
+                    <div style="font-weight: 760;">Topic</div>
+                    <div style="white-space: pre-wrap;">{{ p.topic }}</div>
+                  {% endif %}
+                  {% if p.homework %}
+                    <div style="font-weight: 760; margin-top: 10px;">Homework</div>
+                    <div class="muted" style="white-space: pre-wrap;">{{ p.homework }}</div>
+                  {% endif %}
+                  {% if p.notes %}
+                    <div style="font-weight: 760; margin-top: 10px;">Notes</div>
+                    <div class="muted" style="white-space: pre-wrap;">{{ p.notes }}</div>
+                  {% endif %}
+                </div>
+              {% else %}
+                <p class="muted" style="margin-top: 10px;">No update for this period.</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted" style="margin-top: 10px;">No diary data available.</p>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
+        <a class="btn btn-primary" href="/dashboard/student/">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('student_routine') }}">Routine</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+

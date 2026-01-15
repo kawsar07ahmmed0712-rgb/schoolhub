@@ -1,0 +1,111 @@
+{% set page_title = "Automated AI Insights" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid">
+    <section class="card card-pad">
+      <div class="form-head">
+        <div>
+          <p class="kicker">Workflow</p>
+          <h1>Teachers submit risk checks; Head reviews buckets.</h1>
+          <p class="muted">Use the dropout predictor fields to score a student, then send to the Head list. Buckets: High (Dropout), Medium (Enrolled), Good (Graduate).</p>
+        </div>
+        {% if message %}<div class="pill">{{ message }}</div>{% endif %}
+      </div>
+    </section>
+
+    {% if role == 'teacher' %}
+      <form class="card card-pad" method="post">
+        <div class="form-head">
+          <div>
+            <p class="kicker">Teacher form</p>
+            <h2>Record a risk check</h2>
+          </div>
+          <div class="pill">Saved to shared list</div>
+        </div>
+
+        <div class="grid grid-2">
+          <div>
+            <label for="student_name">Student name</label>
+            <input id="student_name" name="student_name" type="text" placeholder="Student full name" />
+          </div>
+          <div>
+            <label>Tip</label>
+            <p class="muted small">Enter realistic numbers; missing inputs use model medians.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          {% for f in fields %}
+            <div>
+              <label for="auto-{{ f.name }}">{{ f.label }}</label>
+              <input id="auto-{{ f.name }}" name="{{ f.name }}" type="{{ f.type }}" step="{{ f.step }}" placeholder="{{ f.hint }}" />
+              <p class="muted small">{{ f.hint }}</p>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Score & send to Head</button>
+          <span class="muted small">Risk bucket determined by model label.</span>
+        </div>
+      </form>
+    {% endif %}
+
+    <section class="card card-pad">
+      <div class="form-head">
+        <div>
+          <p class="kicker">Head view</p>
+          <h2>Bucketed results</h2>
+          <p class="muted">High = predicted Dropout, Medium = Enrolled, Good = Graduate.</p>
+        </div>
+        <div class="pill">{{ submissions|length }} submissions</div>
+      </div>
+
+      <div class="grid grid-3 ai-playbook">
+        <div class="play-card">
+          <div class="pill">High risk</div>
+          {% if buckets.high %}
+            <ul class="clean-list">
+              {% for r in buckets.high %}
+                <li>
+                  <strong>{{ r.student_name }}</strong> — {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="muted">No items yet.</p>
+          {% endif %}
+        </div>
+        <div class="play-card">
+          <div class="pill">Risk</div>
+          {% if buckets.medium %}
+            <ul class="clean-list">
+              {% for r in buckets.medium %}
+                <li>
+                  <strong>{{ r.student_name }}</strong> — {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="muted">No items yet.</p>
+          {% endif %}
+        </div>
+        <div class="play-card">
+          <div class="pill">Good</div>
+          {% if buckets.good %}
+            <ul class="clean-list">
+              {% for r in buckets.good %}
+                <li>
+                  <strong>{{ r.student_name }}</strong> — {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="muted">No items yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}

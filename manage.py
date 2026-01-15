@@ -46,6 +46,18 @@ def cmd_import_teacher_schedule(args: argparse.Namespace) -> int:
     return subprocess.call(cmd)
 
 
+def cmd_train_ml(args: argparse.Namespace) -> int:
+    """
+    Train and cache the ML models used in the AI Insights page.
+    """
+    from services.ml_service import train_all
+
+    summaries = train_all(force=args.force)
+    for s in summaries:
+        print(f"[{s.name}] rows={s.rows} metrics={s.metrics} trained_at={s.trained_at}")
+    return 0
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     import os
 
@@ -80,6 +92,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="Validate only; do not write to DB")
     p.set_defaults(func=cmd_import_teacher_schedule)
 
+    p = sub.add_parser("train-ml", help="Train and cache the ML models for AI insights")
+    p.add_argument("--force", action="store_true", help="Force retrain even if artifacts exist")
+    p.set_defaults(func=cmd_train_ml)
+
     p = sub.add_parser("run", help="Run the Flask development server")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=5000)
@@ -96,4 +112,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

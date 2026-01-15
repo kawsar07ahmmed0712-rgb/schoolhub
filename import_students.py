@@ -47,7 +47,7 @@ def get_or_create_student(cursor, user_id: int, name: str) -> int:
 
 
 def insert_into_class_table(cursor, table_name: str, student_id: int, roll: int):
-    # IGNORE = duplicate হলে crash করবে না (UNIQUE constraint থাকলে skip করবে)
+    # INSERT IGNORE prevents crashing on duplicates (UNIQUE constraint rows are skipped).
     cursor.execute(
         f"INSERT IGNORE INTO `{table_name}` (student_id, roll) VALUES (%s, %s)",
         (student_id, roll),
@@ -59,7 +59,7 @@ def import_all_students():
     files = sorted(glob.glob(pattern))
 
     if not files:
-        print(f"❌ No student CSV found in: {STUDENTS_DATA_DIR}")
+        print(f"ERROR: No student CSV found in: {STUDENTS_DATA_DIR}")
         return
 
     conn = connect_db()
@@ -89,9 +89,12 @@ def import_all_students():
     cursor.close()
     conn.close()
 
-    print(f"✅ Student rows processed: {total_rows}")
-    print(f"✅ Student files found: {len(files)}")
+    print(f"OK. Student rows processed: {total_rows}")
+    print(f"OK. Student files found: {len(files)}")
 
 
 if __name__ == "__main__":
     import_all_students()
+
+
+

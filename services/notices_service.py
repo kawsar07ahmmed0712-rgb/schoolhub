@@ -24,7 +24,7 @@ def list_notices(limit: int = 200) -> List[Dict]:
       (limit,)
     )
     rows = cur.fetchall() or []
-    # created_at কে template-friendly string বানাই
+    # Format created_at for templates.
     for r in rows:
       if r.get("created_at") is not None:
         r["created_at"] = r["created_at"].strftime("%Y-%m-%d %H:%M")

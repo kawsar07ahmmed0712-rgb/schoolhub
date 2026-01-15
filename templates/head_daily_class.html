@@ -1,0 +1,103 @@
+{% set page_title = "Class Diary" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1200px;">
+    <section class="card card-pad">
+      <h1>Class Diary (Head)</h1>
+      <p class="muted">Review daily diary updates by class teacher.</p>
+      <p class="muted"><strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
+
+      <form method="get" action="{{ url_for('head_daily_class') }}" class="form-row" style="margin-top: 12px;">
+        <div class="grid grid-3">
+          <div>
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" value="{{ date }}" />
+          </div>
+          <div>
+            <label for="class_no">Class</label>
+            <select id="class_no" name="class_no">
+              <option value="">Select...</option>
+              {% for n in range(1, 11) %}
+                <option value="{{ n }}" {% if selected.class_no|string == n|string %}selected{% endif %}>{{ n }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="section">Section</label>
+            <select id="section" name="section">
+              <option value="">Select...</option>
+              <option value="A" {% if selected.section == 'A' %}selected{% endif %}>A</option>
+              <option value="B" {% if selected.section == 'B' %}selected{% endif %}>B</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">Load</button>
+          <a class="btn btn-ghost" href="{{ url_for('head_daily_class') }}">Reset</a>
+          <a class="btn btn-ghost" href="/dashboard/head/">Back to Dashboard</a>
+        </div>
+      </form>
+    </section>
+
+    {% if selected.class_no and selected.section %}
+      <section class="card card-pad">
+        <h2>Class Teacher</h2>
+        {% if class_teacher %}
+          <p class="muted">
+            <strong>{{ class_teacher.teacher_name }}</strong>
+            · {{ class_teacher.teacher_phone }}
+            · <span class="badge">{{ class_teacher.teacher_code }}</span>
+          </p>
+        {% else %}
+          <p class="muted">No class teacher assignment found for this class/year.</p>
+        {% endif %}
+      </section>
+
+      <section class="card card-pad">
+        <h2>Periods (1–6)</h2>
+        <p class="muted">Shows the diary as entered by the class teacher for this date.</p>
+
+        {% if periods %}
+          <div class="grid grid-2" style="margin-top: 12px;">
+            {% for p in periods %}
+              <div class="card card-pad" style="box-shadow:none;">
+                <div style="display:flex; justify-content: space-between; gap: 10px; align-items:center; flex-wrap: wrap;">
+                  <div style="font-weight: 760;">Period {{ p.period_no }}</div>
+                  <span class="badge">{% if p.has_update %}Updated{% else %}Empty{% endif %}</span>
+                </div>
+
+                <div class="muted" style="font-size: 12px; margin-top: 6px;">
+                  Scheduled teacher: <strong>{{ p.teacher_name }}</strong> · {{ p.teacher_phone }}
+                </div>
+
+                {% if p.has_update %}
+                  <div style="margin-top: 10px;">
+                    {% if p.topic %}
+                      <div style="font-weight: 760;">Topic</div>
+                      <div style="white-space: pre-wrap;">{{ p.topic }}</div>
+                    {% endif %}
+                    {% if p.homework %}
+                      <div style="font-weight: 760; margin-top: 10px;">Homework</div>
+                      <div class="muted" style="white-space: pre-wrap;">{{ p.homework }}</div>
+                    {% endif %}
+                    {% if p.notes %}
+                      <div style="font-weight: 760; margin-top: 10px;">Notes</div>
+                      <div class="muted" style="white-space: pre-wrap;">{{ p.notes }}</div>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <p class="muted" style="margin-top: 10px;">No update for this period.</p>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted" style="margin-top: 10px;">No diary data available.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}
+

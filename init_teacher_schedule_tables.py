@@ -66,7 +66,7 @@ def main():
     cursor.close()
     conn.close()
 
-    print("✅ Tables ensured: teacher_schedule_slots, teacher_lesson_logs")
+    print("OK. Tables ensured: teacher_schedule_slots, teacher_lesson_logs")
 
 if __name__ == "__main__":
     main()

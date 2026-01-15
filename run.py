@@ -9,6 +9,12 @@ import io
 
 from utils.db_helpers import get_student_id_by_user_id
 from utils.web_helpers import normalize_role, get_academic_year
+from utils.school_lookup import (
+  find_student_class_section,
+  get_class_teacher_for,
+  get_schedule_teachers_for_class_day,
+  parse_iso_date,
+)
 
 from services.notices_service import list_notices, create_notice, delete_notice
 from services.fees_service import (
@@ -39,6 +45,20 @@ from services.leaves_service import (
   list_teacher_pending_leaves,
   decide_leave_request,
 )
+from services.gemini_service import ask_gemini
+from services.ai_cache import (
+  load_auto_insights,
+  save_auto_insight,
+  build_risk_buckets,
+  new_entry as new_auto_entry,
+)
+from services.ml_service import (
+  get_ml_summary,
+  predict_dropout,
+  predict_exam_performance,
+  DROPOUT_FORM_FIELDS,
+  EXAM_FORM_FIELDS,
+)
 
 
 
@@ -63,7 +83,7 @@ def setup_logging(app):
   handler.setFormatter(formatter)
   handler.setLevel(logging.INFO)
 
-  # Flask default handlers এর সাথে duplicate না হয়
+  # Avoid duplicate handlers in Flask logger setup.
   if not app.logger.handlers:
     app.logger.addHandler(handler)
   else:
@@ -89,7 +109,7 @@ def not_found(e):
   return render_template(
     "error.html",
     title="Page not found (404)",
-    message="এই পেজটা নেই। URL ঠিক আছে কিনা দেখুন।",
+    message="This page doesn't exist. Please check the URL and try again.",
     role=session.get("role"),
     phone=session.get("phone"),
   ), 404
@@ -117,7 +137,7 @@ def server_error(e):
   return render_template(
     "error.html",
     title="Server error (500)",
-    message="সার্ভারে সমস্যা হয়েছে। app.log দেখে আমরা ধরতে পারবো কোথায়।",
+    message="Something went wrong on the server. Check app.log for details.",
     role=session.get("role"),
     phone=session.get("phone"),
   ), 500
@@ -230,6 +250,7 @@ def fetch_role_profile(user_id: int, role: str):
 ROLE_PAGES = {
     "student": [
         ("profile", "Profile"),
+        ("ai_assist", "AI Study Assistant"),
         ("fees", "Fees (Monthly)"),
         ("payments", "My Payments"),
         ("results", "Results"),
@@ -237,9 +258,12 @@ ROLE_PAGES = {
         ("leaves", "Leave Requests"),
         ("notices", "Notices"),
         ("routine", "Routine"),
+        ("daily_class", "Daily Diary"),
     ],
     "teacher": [
         ("students", "Student List"),
+        ("ai_insights", "AI Insights"),
+        ("ai_auto", "Automated AI Insights"),
         ("attendance", "Take Attendance"),
         ("today_schedule", "Today's Schedule"),
         ("weekly_schedule", "Weekly Schedule"),
@@ -251,7 +275,10 @@ ROLE_PAGES = {
     "head": [
         ("teachers", "Teachers Management"),
         ("approvals", "Approvals"),
+        ("ai_insights", "AI Insights"),
+        ("ai_auto", "Automated AI Insights"),
         ("today_overview", "Today's Overview"),
+        ("daily_class", "Class Diary"),
         ("results", "Results Publish/Lock"),
         ("reports", "Reports"),
         ("notices", "Notices"),
@@ -260,6 +287,7 @@ ROLE_PAGES = {
     "admin": [
         ("settings", "School Settings"),
         ("users", "Users Management"),
+        ("ai_insights", "AI Insights"),
         ("fees_setup", "Fees Setup"),
         ("payments", "Payments"),
         ("payments_history", "Payments History"),
@@ -280,17 +308,21 @@ def build_nav_links(role: str) -> dict:
   if role == "student":
     links.update(
       {
+        "ai_assist": url_for("student_ai_assist"),
         "fees": url_for("student_fees"),
         "payments": url_for("student_payments_history"),
         "results": url_for("student_results"),
         "attendance": url_for("student_attendance"),
         "routine": url_for("student_routine"),
         "leaves": url_for("student_leaves"),
+        "daily_class": url_for("student_daily_class"),
       }
     )
   elif role == "teacher":
     links.update(
       {
+        "ai_insights": url_for("ai_insights", role="teacher"),
+        "ai_auto": url_for("ai_auto_insights", role="teacher"),
         "students": url_for("teacher_students", role="teacher"),
         "attendance": url_for("teacher_attendance", role="teacher"),
         "today_schedule": url_for("teacher_today_schedule"),
@@ -303,16 +335,20 @@ def build_nav_links(role: str) -> dict:
   elif role == "head":
     links.update(
       {
+        "ai_insights": url_for("ai_insights", role="head"),
+        "ai_auto": url_for("ai_auto_insights", role="head"),
         "today_overview": url_for("head_today_overview"),
         "teachers": url_for("head_teachers"),
         "results": url_for("head_results"),
         "approvals": url_for("head_approvals"),
         "reports": url_for("head_reports"),
+        "daily_class": url_for("head_daily_class"),
       }
     )
   elif role == "admin":
     links.update(
       {
+        "ai_insights": url_for("ai_insights", role="admin"),
         "settings": url_for("admin_settings"),
         "users": url_for("admin_users"),
         "fees_setup": url_for("admin_fees_setup"),
@@ -471,6 +507,90 @@ def dashboard_page(role, page):
     role=role,
     phone=session.get("phone"),
     page=page,
+  )
+
+@app.route("/dashboard/<role>/ai-insights", methods=["GET", "POST"])
+def ai_insights(role):
+  role = normalize_role(role)
+
+  if session.get("role") != role:
+    return redirect(url_for("login", role=role))
+
+  if role not in {"teacher", "head", "admin"}:
+    return redirect(url_for("dashboard", role=role))
+
+  summary = get_ml_summary()
+  dropout_result = None
+  exam_result = None
+  message = None
+
+  if request.method == "POST":
+    form_kind = request.form.get("form_kind")
+    try:
+      if form_kind == "dropout":
+        payload = {f["name"]: request.form.get(f["name"]) for f in DROPOUT_FORM_FIELDS}
+        dropout_result = predict_dropout(payload)
+      elif form_kind == "exam":
+        payload = {f["name"]: request.form.get(f["name"]) for f in EXAM_FORM_FIELDS}
+        exam_result = predict_exam_performance(payload)
+      else:
+        message = "Unknown form submission."
+    except Exception as exc:
+      app.logger.exception("AI Insights form error")
+      message = f"Could not score the request: {exc}"
+
+  return render_template(
+    "ai_insights.html",
+    role=role,
+    phone=session.get("phone"),
+    summary=summary,
+    dropout_result=dropout_result,
+    exam_result=exam_result,
+    message=message,
+  )
+
+
+@app.route("/dashboard/<role>/ai-automated", methods=["GET", "POST"])
+def ai_auto_insights(role):
+  role = normalize_role(role)
+  if session.get("role") != role:
+    return redirect(url_for("login", role=role))
+  if role not in {"teacher", "head"}:
+    return redirect(url_for("dashboard", role=role))
+
+  submissions = load_auto_insights()
+  buckets = build_risk_buckets(submissions)
+  message = None
+
+  if role == "teacher" and request.method == "POST":
+    student_name = (request.form.get("student_name") or "").strip()
+    payload = {f["name"]: request.form.get(f["name"]) for f in DROPOUT_FORM_FIELDS}
+    try:
+      result = predict_dropout(payload)
+      entry = new_auto_entry(
+        student_name=student_name or "Unnamed student",
+        label=result["label"],
+        confidence=result["confidence"],
+        submitted_by=session.get("phone") or "unknown",
+        role=role,
+        features=result.get("used_features", {}),
+      )
+      save_auto_insight(entry)
+      submissions = load_auto_insights()
+      buckets = build_risk_buckets(submissions)
+      message = f"Saved for {entry.student_name} ({entry.label}, {(entry.confidence*100):.1f}%)."
+    except Exception as exc:
+      app.logger.exception("ai_auto_insights teacher submit failed")
+      message = f"Could not score entry: {exc}"
+
+  return render_template(
+    "ai_automated.html",
+    role=role,
+    phone=session.get("phone"),
+    buckets=buckets,
+    submissions=submissions,
+    message=message,
+    fields=DROPOUT_FORM_FIELDS,
   )
 
 
@@ -1276,6 +1396,185 @@ def student_routine():
         conn.close()
 
 
+@app.get("/dashboard/student/daily-class")
+def student_daily_class():
+    if session.get("role") != "student":
+        return redirect(url_for("login", role="student"))
+
+    selected_date_str = (request.args.get("date") or "").strip()
+    try:
+        selected_date_obj = parse_iso_date(selected_date_str) if selected_date_str else date.today()
+    except Exception:
+        selected_date_obj = date.today()
+    selected_date = str(selected_date_obj)
+    weekday = get_weekday_slug(selected_date_obj)
+
+    user_id = session.get("user_id")
+    if user_id is None:
+        return redirect(url_for("login", role="student"))
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id, name FROM students WHERE user_id=%s", (int(user_id),))
+        stu = cursor.fetchone()
+        if not stu:
+            return render_template(
+                "student_daily_class.html",
+                date=selected_date,
+                weekday=weekday,
+                student_name=None,
+                class_no=None,
+                section=None,
+                roll=None,
+                class_teacher=None,
+                periods=[],
+                message="Student profile not found in DB.",
+            )
+
+        student_id = int(stu["id"])
+        student_name = stu["name"]
+
+        class_info = find_student_class_section(cursor, student_id=student_id)
+        if not class_info:
+            return render_template(
+                "student_daily_class.html",
+                date=selected_date,
+                weekday=weekday,
+                student_name=student_name,
+                class_no=None,
+                section=None,
+                roll=None,
+                class_teacher=None,
+                periods=[],
+                message="Class/section not found for this student yet.",
+            )
+
+        class_no = int(class_info["class_no"])
+        section = str(class_info["section"])
+        roll = int(class_info["roll"])
+
+        academic_year = get_academic_year()
+        class_teacher = get_class_teacher_for(cursor, class_no=class_no, section=section, academic_year=academic_year)
+        if not class_teacher:
+            return render_template(
+                "student_daily_class.html",
+                date=selected_date,
+                weekday=weekday,
+                student_name=student_name,
+                class_no=class_no,
+                section=section,
+                roll=roll,
+                class_teacher=None,
+                periods=[],
+                message="Class teacher assignment not found for this class/year.",
+            )
+
+        try:
+            schedule_map = get_schedule_teachers_for_class_day(cursor, class_no=class_no, section=section, weekday=weekday)
+        except Exception:
+            schedule_map = {}
+
+        cursor.execute(
+            """
+            SELECT id
+            FROM daily_class_days
+            WHERE teacher_id=%s AND log_date=%s
+            LIMIT 1
+            """,
+            (int(class_teacher["teacher_id"]), selected_date),
+        )
+        day = cursor.fetchone()
+
+        period_map = {}
+        if day:
+            cursor.execute(
+                """
+                SELECT period_no, topic, homework, notes
+                FROM daily_class_periods
+                WHERE day_id=%s
+                """,
+                (int(day["id"]),),
+            )
+            for row in cursor.fetchall() or []:
+                period_map[int(row["period_no"])] = row
+
+        periods = []
+        for n in range(1, 7):
+            row = period_map.get(n, {})
+            sch = schedule_map.get(n, {})
+            periods.append(
+                {
+                    "period_no": n,
+                    "teacher_name": sch.get("teacher_name") or "-",
+                    "teacher_phone": sch.get("teacher_phone") or "-",
+                    "topic": (row.get("topic") or "").strip(),
+                    "homework": (row.get("homework") or "").strip(),
+                    "notes": (row.get("notes") or "").strip(),
+                    "has_update": bool((row.get("topic") or "").strip() or (row.get("homework") or "").strip() or (row.get("notes") or "").strip()),
+                }
+            )
+
+        message = None
+        if not day:
+            message = "No daily diary found for this date yet."
+        elif not any(p["has_update"] for p in periods):
+            message = "Daily diary is empty for this date."
+
+        return render_template(
+            "student_daily_class.html",
+            date=selected_date,
+            weekday=weekday,
+            student_name=student_name,
+            class_no=class_no,
+            section=section,
+            roll=roll,
+            class_teacher=class_teacher,
+            periods=periods,
+            message=message,
+        )
+    except Exception:
+        app.logger.exception("student_daily_class failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` to create required tables, then refresh this page.",
+            role="student",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route("/dashboard/student/ai-assist", methods=["GET", "POST"])
+def student_ai_assist():
+    if session.get("role") != "student":
+        return redirect(url_for("login", role="student"))
+
+    answer = None
+    error = None
+    question = ""
+    if request.method == "POST":
+        question = (request.form.get("question") or "").strip()
+        if question:
+            try:
+                answer = ask_gemini(question, student_name=session.get("phone") or "Student")
+            except Exception as exc:
+                error = f"Could not contact Gemini: {exc}"
+        else:
+            error = "Ask a question first."
+
+    return render_template(
+        "ai_assist.html",
+        role="student",
+        phone=session.get("phone"),
+        question=question,
+        answer=answer,
+        error=error,
+    )
+
+
 @app.get("/dashboard/student/results")
 def student_results():
     if session.get("role") != "student":
@@ -1353,7 +1652,15 @@ def teacher_daily_class():
     if session.get("role") != "teacher":
         return redirect(url_for("login", role="teacher"))
 
-    today = str(date.today())
+    raw_date = (request.form.get("log_date") if request.method == "POST" else request.args.get("date")) or ""
+    raw_date = raw_date.strip()
+    try:
+        selected_date_obj = parse_iso_date(raw_date) if raw_date else date.today()
+    except Exception:
+        selected_date_obj = date.today()
+
+    selected_date = str(selected_date_obj)
+    weekday = get_weekday_slug(selected_date_obj)
 
     conn = connect_db()
     cursor = conn.cursor(dictionary=True)
@@ -1365,7 +1672,8 @@ def teacher_daily_class():
         if not t:
             return render_template(
                 "teacher_daily_class.html",
-                today=today,
+                date=selected_date,
+                weekday=weekday,
                 class_no="-",
                 section="-",
                 periods=[],
@@ -1389,7 +1697,8 @@ def teacher_daily_class():
         if not a:
             return render_template(
                 "teacher_daily_class.html",
-                today=today,
+                date=selected_date,
+                weekday=weekday,
                 class_no="-",
                 section="-",
                 periods=[],
@@ -1399,13 +1708,18 @@ def teacher_daily_class():
         class_no = int(a["class_no"])
         section = a["section"]  # 'A' or 'B'
 
+        try:
+            schedule_map = get_schedule_teachers_for_class_day(cursor, class_no=class_no, section=section, weekday=weekday)
+        except Exception:
+            schedule_map = {}
+
         if request.method == "POST":
             try:
                 period_no = int(request.form.get("period_no", "0"))
             except Exception:
                 period_no = 0
             if period_no < 1 or period_no > 6:
-                return redirect(url_for("teacher_daily_class"))
+                return redirect(url_for("teacher_daily_class", date=selected_date))
 
             topic = (request.form.get("topic") or "").strip()[:255]
             homework = (request.form.get("homework") or "").strip()
@@ -1419,11 +1733,11 @@ def teacher_daily_class():
                   class_no=VALUES(class_no),
                   section=VALUES(section)
                 """,
-                (teacher_id, class_no, section, today),
+                (teacher_id, class_no, section, selected_date),
             )
             cursor.execute(
                 "SELECT id FROM daily_class_days WHERE teacher_id=%s AND log_date=%s LIMIT 1",
-                (teacher_id, today),
+                (teacher_id, selected_date),
             )
             day_id = int(cursor.fetchone()["id"])
 
@@ -1440,9 +1754,9 @@ def teacher_daily_class():
             )
 
             conn.commit()
-            return redirect(url_for("teacher_daily_class", saved="1"))
+            return redirect(url_for("teacher_daily_class", date=selected_date, saved="1"))
 
-        # 3) Find today’s day container (if exists)
+        # 3) Find today's day container (if exists)
         cursor.execute(
             """
             SELECT id
@@ -1450,7 +1764,7 @@ def teacher_daily_class():
             WHERE teacher_id=%s AND log_date=%s
             LIMIT 1
             """,
-            (teacher_id, today),
+            (teacher_id, selected_date),
         )
         day = cursor.fetchone()
 
@@ -1472,18 +1786,23 @@ def teacher_daily_class():
         periods = []
         for n in range(1, 7):
             row = period_map.get(n, {})
+            sch = schedule_map.get(n, {})
             periods.append(
                 {
                     "period_no": n,
-                    "topic": row.get("topic", ""),
-                    "homework": row.get("homework", ""),
-                    "notes": row.get("notes", ""),
+                    "teacher_name": sch.get("teacher_name") or "-",
+                    "teacher_phone": sch.get("teacher_phone") or "-",
+                    "topic": (row.get("topic") or "").strip(),
+                    "homework": (row.get("homework") or "").strip(),
+                    "notes": (row.get("notes") or "").strip(),
+                    "has_update": bool((row.get("topic") or "").strip() or (row.get("homework") or "").strip() or (row.get("notes") or "").strip()),
                 }
             )
 
         return render_template(
             "teacher_daily_class.html",
-            today=today,
+            date=selected_date,
+            weekday=weekday,
             class_no=class_no,
             section=section,
             periods=periods,
@@ -2115,6 +2434,122 @@ def head_reports():
         )
     except Exception:
         app.logger.exception("head_reports failed")
+        return render_template(
+            "error.html",
+            title="Database not initialized",
+            message="Please run `python manage.py init-tables` to create required tables, then refresh this page.",
+            role="head",
+            phone=session.get("phone"),
+        ), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.get("/dashboard/head/daily-class")
+def head_daily_class():
+    if session.get("role") != "head":
+        return redirect(url_for("login", role="head"))
+
+    selected_date_str = (request.args.get("date") or "").strip()
+    try:
+        selected_date_obj = parse_iso_date(selected_date_str) if selected_date_str else date.today()
+    except Exception:
+        selected_date_obj = date.today()
+    selected_date = str(selected_date_obj)
+    weekday = get_weekday_slug(selected_date_obj)
+
+    class_no_raw = (request.args.get("class_no") or "").strip()
+    section = (request.args.get("section") or "").strip().upper()
+
+    class_no_int = None
+    if class_no_raw:
+        try:
+            class_no_int = int(class_no_raw)
+        except Exception:
+            class_no_int = None
+
+    # Render empty state with filter UI
+    if class_no_int is None or class_no_int < 1 or class_no_int > 10 or section not in {"A", "B"}:
+        return render_template(
+            "head_daily_class.html",
+            date=selected_date,
+            weekday=weekday,
+            selected={"class_no": class_no_raw, "section": section},
+            class_teacher=None,
+            periods=[],
+            message="Select a class and section to view the daily diary.",
+        )
+
+    academic_year = get_academic_year()
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        class_teacher = get_class_teacher_for(cursor, class_no=class_no_int, section=section, academic_year=academic_year)
+
+        try:
+            schedule_map = get_schedule_teachers_for_class_day(cursor, class_no=class_no_int, section=section, weekday=weekday)
+        except Exception:
+            schedule_map = {}
+
+        period_map = {}
+        if class_teacher:
+            cursor.execute(
+                """
+                SELECT id
+                FROM daily_class_days
+                WHERE teacher_id=%s AND log_date=%s
+                LIMIT 1
+                """,
+                (int(class_teacher["teacher_id"]), selected_date),
+            )
+            day = cursor.fetchone()
+            if day:
+                cursor.execute(
+                    """
+                    SELECT period_no, topic, homework, notes
+                    FROM daily_class_periods
+                    WHERE day_id=%s
+                    """,
+                    (int(day["id"]),),
+                )
+                for row in cursor.fetchall() or []:
+                    period_map[int(row["period_no"])] = row
+
+        periods = []
+        for n in range(1, 7):
+            row = period_map.get(n, {})
+            sch = schedule_map.get(n, {})
+            periods.append(
+                {
+                    "period_no": n,
+                    "teacher_name": sch.get("teacher_name") or "-",
+                    "teacher_phone": sch.get("teacher_phone") or "-",
+                    "topic": (row.get("topic") or "").strip(),
+                    "homework": (row.get("homework") or "").strip(),
+                    "notes": (row.get("notes") or "").strip(),
+                    "has_update": bool((row.get("topic") or "").strip() or (row.get("homework") or "").strip() or (row.get("notes") or "").strip()),
+                }
+            )
+
+        message = None
+        if not class_teacher:
+            message = "Class teacher assignment not found for this class/year."
+        elif not any(p["has_update"] for p in periods):
+            message = "No diary updates found for this date yet."
+
+        return render_template(
+            "head_daily_class.html",
+            date=selected_date,
+            weekday=weekday,
+            selected={"class_no": str(class_no_int), "section": section},
+            class_teacher=class_teacher,
+            periods=periods,
+            message=message,
+        )
+    except Exception:
+        app.logger.exception("head_daily_class failed")
         return render_template(
             "error.html",
             title="Database not initialized",

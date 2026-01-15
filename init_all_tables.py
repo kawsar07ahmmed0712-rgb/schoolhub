@@ -277,7 +277,7 @@ def main():
     conn.commit()
     cursor.close()
     conn.close()
-    print("✅ Tables ensured: users + role tables + 20 class tables")
+    print("OK. Tables ensured: users + role tables + 20 class tables")
 
 
 if __name__ == "__main__":

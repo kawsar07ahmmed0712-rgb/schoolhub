@@ -194,7 +194,7 @@ def main() -> None:
         mode = "DRY-RUN" if dry_run else "WRITE"
         print(f"Mode: {mode}")
         print(
-            f"✅ Processed: {processed} | Upserted: {upserted} | Would import: {would_import} "
+            f"OK. Processed: {processed} | Upserted: {upserted} | Would import: {would_import} "
             f"| Skipped: {skipped} | Duplicate rows: {duplicate_rows} | Teacher not found: {teacher_not_found}"
         )
         print("Skip reasons:", skip_reasons)

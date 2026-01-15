@@ -104,6 +104,13 @@
                           <path d="M5 5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" />
                           <path d="M8 12l2 2 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
+                      {% elif slug in ['daily_class'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M9 4h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M10 3h4a2 2 0 0 1 2 2v2H8V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" />
+                          <path d="M7 7h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" />
+                          <path d="M8.5 11h7M8.5 14h7M8.5 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".9" />
+                        </svg>
                       {% elif slug in ['fees','fees_setup','payments','payments_history'] %}
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M6 7h12v10H6z" stroke="currentColor" stroke-width="1.8" />
@@ -123,6 +130,23 @@
                           <path d="M4 7h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                           <path d="M5 5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" opacity=".95" />
                           <path d="M8 11h3M8 15h3M13 11h3M13 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".85" />
+                        </svg>
+                      {% elif slug in ['ai_insights'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M12 3a9 9 0 1 0 9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M12 7v4l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <circle cx="19" cy="5" r="2.4" stroke="currentColor" stroke-width="1.6" />
+                        </svg>
+                      {% elif slug in ['ai_auto'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M4 12h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M12 4v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <path d="M7 7h4v4H7zM13 13h4v4h-4z" stroke="currentColor" stroke-width="1.6" opacity=".9" />
+                        </svg>
+                      {% elif slug in ['ai_assist'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M4 5h16v10H5.5L4 17.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                          <path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                         </svg>
                       {% else %}
                         <svg viewBox="0 0 24 24" fill="none">

@@ -600,7 +600,7 @@ textarea {
 
 .hero {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   align-items: start;
   gap: 16px;
 }
@@ -625,8 +625,8 @@ textarea {
 .role-grid {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
 }
 
 .role-card {
@@ -634,8 +634,9 @@ textarea {
   text-decoration: none;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  padding: 14px 14px;
+  padding: 18px 18px;
   background: rgba(255, 255, 255, 0.06);
+  min-height: 140px;
   transition: transform 180ms var(--ease-out), background 180ms var(--ease-out), border-color 180ms var(--ease-out);
 }
 
@@ -737,4 +738,201 @@ textarea {
 
 .footer-dot {
   opacity: 0.6;
+}
+
+/* AI Insights */
+.kicker {
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  font-weight: 760;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+.chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.10);
+  font-weight: 650;
+  font-size: 13px;
+}
+
+.ai-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-hero::after {
+  content: "";
+  position: absolute;
+  right: -120px;
+  top: -80px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 245, 255, 0.18), transparent 60%);
+  filter: blur(10px);
+}
+
+.ai-hero-head {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  min-width: 280px;
+}
+
+.stat-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 12px;
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.08), rgba(246, 255, 0, 0.06), rgba(255, 255, 255, 0.12));
+  box-shadow: var(--shadow-1);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 780;
+  margin: 6px 0 4px;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: rgba(0, 245, 255, 0.08);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ai-forms form {
+  position: relative;
+}
+
+.ai-result {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ai-result.success {
+  border-color: rgba(0, 245, 255, 0.35);
+}
+
+.ai-result.info {
+  border-color: rgba(246, 255, 0, 0.35);
+}
+
+.ai-result-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.result-title {
+  font-size: 22px;
+  font-weight: 780;
+}
+
+.prob-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.prob-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 60px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.progress {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.progress span {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 245, 255, 0.80), rgba(246, 255, 0, 0.80));
+}
+
+.small {
+  font-size: 13px;
+}
+
+.ai-playbook {
+  gap: 12px;
+}
+
+.play-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-1);
+}
+
+.clean-list {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.clean-list li {
+  margin: 0;
+  font-size: 14px;
 }

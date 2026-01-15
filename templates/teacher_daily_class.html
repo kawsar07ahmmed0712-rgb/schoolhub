@@ -5,8 +5,21 @@
   <div class="grid" style="max-width: 1200px;">
     <section class="card card-pad">
       <h1>Daily Class Update</h1>
-      <p class="muted"><strong>Date:</strong> {{ today }}</p>
+      <p class="muted"><strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
       <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }}</p>
+
+      <form method="get" action="{{ url_for('teacher_daily_class') }}" class="form-row" style="margin-top: 12px;">
+        <div class="grid grid-2">
+          <div>
+            <label for="date">Pick date</label>
+            <input id="date" name="date" type="date" value="{{ date }}" />
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px; justify-content:flex-end;">
+            <button class="btn btn-primary" type="submit">Load</button>
+            <a class="btn btn-ghost" href="{{ url_for('teacher_daily_class') }}">Today</a>
+          </div>
+        </div>
+      </form>
     </section>
 
     <section class="card card-pad">
@@ -18,11 +31,16 @@
           <div class="card card-pad" style="box-shadow:none;">
             <div style="display:flex; justify-content: space-between; gap: 10px; align-items:center; flex-wrap: wrap;">
               <div style="font-weight: 760;">Period {{ p.period_no }}</div>
-              <span class="badge">Save</span>
+              <span class="badge">{% if p.has_update %}Updated{% else %}Empty{% endif %}</span>
             </div>
 
             <form method="post" action="{{ url_for('teacher_daily_class') }}" class="form-row" style="margin-top: 10px;">
               <input type="hidden" name="period_no" value="{{ p.period_no }}" />
+              <input type="hidden" name="log_date" value="{{ date }}" />
+
+              <div class="muted" style="font-size: 12px; margin-top: -2px;">
+                Scheduled teacher: <strong>{{ p.teacher_name }}</strong> · {{ p.teacher_phone }}
+              </div>
 
               <div>
                 <label>Topic</label>

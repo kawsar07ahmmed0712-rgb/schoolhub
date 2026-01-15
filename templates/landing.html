@@ -7,7 +7,7 @@
       <div class="hero-kicker">SchoolHub</div>
       <h1>School management, simplified.</h1>
       <p class="muted">Fast, role-based dashboards for students, teachers, head teachers, and admins.</p>
-      <p class="muted">Pick a role to continue.</p>
+      <p class="muted">Pick a role to continue or jump into the new AI Insights lab.</p>
 
       <div class="role-grid">
         <a class="role-card" href="/login?role=student">
@@ -15,7 +15,7 @@
             <span>Student</span>
             <span class="badge">Start</span>
           </div>
-          <div class="role-card-sub">Fees • Attendance • Routine • Results • Notices</div>
+          <div class="role-card-sub">Fees -> Attendance -> Routine -> Results -> Notices</div>
         </a>
 
         <a class="role-card" href="/login?role=teacher">
@@ -23,7 +23,7 @@
             <span>Teacher</span>
             <span class="badge">Start</span>
           </div>
-          <div class="role-card-sub">Attendance • Students • Marks • Daily class • Schedules</div>
+          <div class="role-card-sub">Attendance -> Students -> Marks -> Daily class -> Schedules</div>
         </a>
 
         <a class="role-card" href="/login?role=head">
@@ -31,7 +31,7 @@
             <span>Head Teacher</span>
             <span class="badge">Start</span>
           </div>
-          <div class="role-card-sub">Overview • Approvals • Teachers • Results</div>
+          <div class="role-card-sub">Overview -> Approvals -> Teachers -> Results</div>
         </a>
 
         <a class="role-card" href="/login?role=admin">
@@ -39,13 +39,14 @@
             <span>Admin</span>
             <span class="badge">Start</span>
           </div>
-          <div class="role-card-sub">Fees setup • Payments • Users • Timetable • Uploads</div>
+          <div class="role-card-sub">Fees setup -> Payments -> Users -> Timetable -> Uploads</div>
         </a>
       </div>
     </section>
 
     <section class="card card-pad">
       <h2>Highlights</h2>
+      <p class="muted">A refreshed UI with more content and AI-driven helpers.</p>
       <ul class="feature-list">
         <li class="feature-item">
           <span class="feature-ico" aria-hidden="true"></span>
@@ -75,11 +76,37 @@
             <div class="muted">Teachers and admins can publish notices for everyone.</div>
           </div>
         </li>
+        <li class="feature-item">
+          <span class="feature-ico" aria-hidden="true"></span>
+          <div>
+            <strong>AI Insights</strong>
+            <div class="muted">Dropout risk scoring and score forecasting, built from the bundled Kaggle datasets.</div>
+          </div>
+        </li>
       </ul>
+
+      <div class="auth-hint">
+        <span class="muted">New:</span>
+        <span class="muted">Find the "AI Insights" page in every role to fill the empty space with real-time ML widgets.</span>
+      </div>
 
       <div class="auth-hint">
         <span class="muted">Tip:</span>
         <span class="muted">Use the top-right theme toggle if you prefer dark mode.</span>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>ML samples baked in</h2>
+      <div class="grid grid-2">
+        <div>
+          <h3>Dropout predictor</h3>
+          <p class="muted">Uses the Portuguese higher-ed dropout dataset. Fill in semester grades and tuition status to flag risk bands.</p>
+        </div>
+        <div>
+          <h3>Score forecaster</h3>
+          <p class="muted">Uses the StudentsPerformance dataset to estimate an average score and grade band from five quick inputs.</p>
+        </div>
       </div>
     </section>
   </div>

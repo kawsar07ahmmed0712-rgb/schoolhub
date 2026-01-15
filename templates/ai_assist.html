@@ -1,0 +1,36 @@
+{% set page_title = "AI Study Assistant" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid">
+    <section class="card card-pad ai-hero">
+      <div class="hero-kicker">Gemini Tutor</div>
+      <h1>Ask quick questions, get quick study tips.</h1>
+      <p class="muted">Powered by Gemini (API key in .env). Keep it short and specific: “Explain photosynthesis in 3 bullet points” or “How to revise fractions fast?”</p>
+    </section>
+
+    <section class="card card-pad">
+      <form method="post" class="grid" style="gap: 12px;">
+        <div>
+          <label for="question">Your question</label>
+          <textarea id="question" name="question" rows="4" placeholder="Example: Give me 3 tips to improve in algebra this week.">{{ question }}</textarea>
+        </div>
+        <div class="form-actions" style="justify-content: flex-start;">
+          <button class="btn btn-primary" type="submit">Ask Gemini</button>
+          <span class="muted small">Fast answers, 2-4 sentences.</span>
+        </div>
+      </form>
+
+      {% if error %}
+        <div class="alert" style="margin-top: 10px;">{{ error }}</div>
+      {% endif %}
+
+      {% if answer %}
+        <div class="ai-result info" style="margin-top: 12px;">
+          <div class="pill">Gemini reply</div>
+          <p style="margin-top: 8px; white-space: pre-wrap;">{{ answer }}</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
