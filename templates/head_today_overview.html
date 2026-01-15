@@ -97,71 +97,75 @@
     <section class="grid grid-2">
       <div class="card card-pad">
         <h2>By Teacher</h2>
-        <table class="table" style="margin-top: 10px;">
-          <thead>
-            <tr>
-              <th>Teacher</th>
-              <th>Phone</th>
-              <th>Total</th>
-              <th>Done</th>
-              <th>Pending</th>
-              <th>Done %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for t in teacher_summary %}
+        <div class="table-wrap" style="margin-top: 10px;">
+          <table class="table">
+            <thead>
               <tr>
-                <td>
-                  <a href="{{ url_for('head_today_overview', teacher_id=t.teacher_id, class_no=selected_class_no, section=selected_section, status=selected_status) }}">{{ t.teacher_name }}</a>
-                </td>
-                <td>{{ t.teacher_phone }}</td>
-                <td>{{ t.total }}</td>
-                <td>{{ t.done }}</td>
-                <td>{{ t.pending }}</td>
-                <td>{{ t.percent }}%</td>
+                <th>Teacher</th>
+                <th>Phone</th>
+                <th>Total</th>
+                <th>Done</th>
+                <th>Pending</th>
+                <th>Done %</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for t in teacher_summary %}
+                <tr>
+                  <td>
+                    <a href="{{ url_for('head_today_overview', teacher_id=t.teacher_id, class_no=selected_class_no, section=selected_section, status=selected_status) }}">{{ t.teacher_name }}</a>
+                  </td>
+                  <td>{{ t.teacher_phone }}</td>
+                  <td>{{ t.total }}</td>
+                  <td>{{ t.done }}</td>
+                  <td>{{ t.pending }}</td>
+                  <td>{{ t.percent }}%</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card card-pad">
         <h2>By Class</h2>
-        <table class="table" style="margin-top: 10px;">
-          <thead>
-            <tr>
-              <th>Class</th>
-              <th>Section</th>
-              <th>Total</th>
-              <th>Done</th>
-              <th>Pending</th>
-              <th>Done %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for c in class_summary %}
+        <div class="table-wrap" style="margin-top: 10px;">
+          <table class="table">
+            <thead>
               <tr>
-                <td>
-                  <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=c.class_no, section=c.section, status=selected_status) }}">{{ c.class_no }}</a>
-                </td>
-                <td>
-                  <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=c.class_no, section=c.section, status=selected_status) }}">{{ c.section }}</a>
-                </td>
-                <td>{{ c.total }}</td>
-                <td>{{ c.done }}</td>
-                <td>{{ c.pending }}</td>
-                <td>{{ c.percent }}%</td>
+                <th>Class</th>
+                <th>Section</th>
+                <th>Total</th>
+                <th>Done</th>
+                <th>Pending</th>
+                <th>Done %</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for c in class_summary %}
+                <tr>
+                  <td>
+                    <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=c.class_no, section=c.section, status=selected_status) }}">{{ c.class_no }}</a>
+                  </td>
+                  <td>
+                    <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=c.class_no, section=c.section, status=selected_status) }}">{{ c.section }}</a>
+                  </td>
+                  <td>{{ c.total }}</td>
+                  <td>{{ c.done }}</td>
+                  <td>{{ c.pending }}</td>
+                  <td>{{ c.percent }}%</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <section class="card card-pad">
       <h2>Details</h2>
       {% if rows %}
-        <div style="overflow:auto; margin-top: 10px;">
+        <div class="table-wrap" style="margin-top: 10px;">
           <table class="table">
             <thead>
               <tr>
@@ -195,4 +199,3 @@
     </section>
   </div>
 {% endblock %}
-

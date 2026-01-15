@@ -49,36 +49,37 @@
       {% if rows|length == 0 %}
         <p class="muted">No payments found.</p>
       {% else %}
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Paid At</th>
-              <th>Student</th>
-              <th>Class</th>
-              <th>Year</th>
-              <th>Month</th>
-              <th>Paid</th>
-              <th>Receiver</th>
-              <th>Receipt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in rows %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
               <tr>
-                <td>{{ r.paid_at }}</td>
-                <td>{{ r.student_phone }}</td>
-                <td>{{ r.class_no }}-{{ r.section }}</td>
-                <td>{{ r.academic_year }}</td>
-                <td>{{ r.fee_month }}</td>
-                <td><strong>{{ r.paid_amount }}</strong></td>
-                <td>{{ r.received_by_phone }}</td>
-                <td><a class="btn btn-ghost" href="/dashboard/admin/payments/{{ r.id }}">View</a></td>
+                <th>Paid At</th>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Year</th>
+                <th>Month</th>
+                <th>Paid</th>
+                <th>Receiver</th>
+                <th>Receipt</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.paid_at }}</td>
+                  <td>{{ r.student_phone }}</td>
+                  <td>{{ r.class_no }}-{{ r.section }}</td>
+                  <td>{{ r.academic_year }}</td>
+                  <td>{{ r.fee_month }}</td>
+                  <td><strong>{{ r.paid_amount }}</strong></td>
+                  <td>{{ r.received_by_phone }}</td>
+                  <td><a class="btn btn-ghost" href="/dashboard/admin/payments/{{ r.id }}">View</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% endif %}
     </section>
   </div>
 {% endblock %}
-

@@ -38,22 +38,24 @@
       </p>
 
       {% if rows %}
-        <table class="table" style="margin-top: 10px;">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in rows %}
+        <div class="table-wrap" style="margin-top: 10px;">
+          <table class="table">
+            <thead>
               <tr>
-                <td>{{ r.attendance_date }}</td>
-                <td><strong>{{ r.status }}</strong></td>
+                <th>Date</th>
+                <th>Status</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.attendance_date }}</td>
+                  <td><strong>{{ r.status }}</strong></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% else %}
         <p class="muted" style="margin-top: 10px;">No attendance records found.</p>
       {% endif %}
@@ -64,4 +66,3 @@
     </section>
   </div>
 {% endblock %}
-

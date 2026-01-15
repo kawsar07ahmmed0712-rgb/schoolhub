@@ -37,32 +37,33 @@
       {% if rows|length == 0 %}
         <p class="muted">No leave requests yet.</p>
       {% else %}
-        <table class="table" style="margin-top: 10px;">
-          <thead>
-            <tr>
-              <th>From</th>
-              <th>To</th>
-              <th>Status</th>
-              <th>Requested</th>
-              <th>Decided</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in rows %}
+        <div class="table-wrap" style="margin-top: 10px;">
+          <table class="table">
+            <thead>
               <tr>
-                <td>{{ r.from_date }}</td>
-                <td>{{ r.to_date }}</td>
-                <td><strong>{{ r.status|upper }}</strong></td>
-                <td>{{ r.created_at }}</td>
-                <td>{{ r.decided_at or '-' }}</td>
-                <td style="white-space: pre-wrap;">{{ r.reason }}</td>
+                <th>From</th>
+                <th>To</th>
+                <th>Status</th>
+                <th>Requested</th>
+                <th>Decided</th>
+                <th>Reason</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.from_date }}</td>
+                  <td>{{ r.to_date }}</td>
+                  <td><strong>{{ r.status|upper }}</strong></td>
+                  <td>{{ r.created_at }}</td>
+                  <td>{{ r.decided_at or '-' }}</td>
+                  <td style="white-space: pre-wrap;">{{ r.reason }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% endif %}
     </section>
   </div>
 {% endblock %}
-

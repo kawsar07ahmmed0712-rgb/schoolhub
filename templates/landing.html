@@ -2,34 +2,84 @@
 {% extends "_base.html" %}
 
 {% block content %}
-  <div class="grid grid-2">
+  <div class="hero">
     <section class="card card-pad">
-      <h1>SchoolHub</h1>
-      <p class="muted">A clean, role-based school dashboard for students, teachers, head teachers, and admins.</p>
-      <p class="muted">Choose a role to sign in.</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-        <a class="btn btn-primary" href="/login?role=student">Continue as Student</a>
-        <a class="btn" href="/login?role=teacher">Teacher</a>
-        <a class="btn" href="/login?role=head">Head Teacher</a>
-        <a class="btn" href="/login?role=admin">Admin</a>
+      <div class="hero-kicker">SchoolHub</div>
+      <h1>School management, simplified.</h1>
+      <p class="muted">Fast, role-based dashboards for students, teachers, head teachers, and admins.</p>
+      <p class="muted">Pick a role to continue.</p>
+
+      <div class="role-grid">
+        <a class="role-card" href="/login?role=student">
+          <div class="role-card-title">
+            <span>Student</span>
+            <span class="badge">Start</span>
+          </div>
+          <div class="role-card-sub">Fees • Attendance • Routine • Results • Notices</div>
+        </a>
+
+        <a class="role-card" href="/login?role=teacher">
+          <div class="role-card-title">
+            <span>Teacher</span>
+            <span class="badge">Start</span>
+          </div>
+          <div class="role-card-sub">Attendance • Students • Marks • Daily class • Schedules</div>
+        </a>
+
+        <a class="role-card" href="/login?role=head">
+          <div class="role-card-title">
+            <span>Head Teacher</span>
+            <span class="badge">Start</span>
+          </div>
+          <div class="role-card-sub">Overview • Approvals • Teachers • Results</div>
+        </a>
+
+        <a class="role-card" href="/login?role=admin">
+          <div class="role-card-title">
+            <span>Admin</span>
+            <span class="badge">Start</span>
+          </div>
+          <div class="role-card-sub">Fees setup • Payments • Users • Timetable • Uploads</div>
+        </a>
       </div>
     </section>
 
     <section class="card card-pad">
-      <h2>What you can do</h2>
-      <div class="grid" style="margin-top:12px;">
-        <div class="card card-pad" style="box-shadow:none;">
-          <strong>Students</strong>
-          <div class="muted">Fees, attendance, notices, payments history.</div>
-        </div>
-        <div class="card card-pad" style="box-shadow:none;">
-          <strong>Teachers</strong>
-          <div class="muted">Attendance, student list, daily class updates, schedules.</div>
-        </div>
-        <div class="card card-pad" style="box-shadow:none;">
-          <strong>Admin</strong>
-          <div class="muted">Fees setup, payments, schedule uploads.</div>
-        </div>
+      <h2>Highlights</h2>
+      <ul class="feature-list">
+        <li class="feature-item">
+          <span class="feature-ico" aria-hidden="true"></span>
+          <div>
+            <strong>Attendance & Leave</strong>
+            <div class="muted">Teachers take attendance; students view history and requests.</div>
+          </div>
+        </li>
+        <li class="feature-item">
+          <span class="feature-ico" aria-hidden="true"></span>
+          <div>
+            <strong>Fees & Payments</strong>
+            <div class="muted">Monthly fees status for students; payments and receipts for admins.</div>
+          </div>
+        </li>
+        <li class="feature-item">
+          <span class="feature-ico" aria-hidden="true"></span>
+          <div>
+            <strong>Schedules</strong>
+            <div class="muted">Daily and weekly schedules for teachers; routine for students.</div>
+          </div>
+        </li>
+        <li class="feature-item">
+          <span class="feature-ico" aria-hidden="true"></span>
+          <div>
+            <strong>Notices</strong>
+            <div class="muted">Teachers and admins can publish notices for everyone.</div>
+          </div>
+        </li>
+      </ul>
+
+      <div class="auth-hint">
+        <span class="muted">Tip:</span>
+        <span class="muted">Use the top-right theme toggle if you prefer dark mode.</span>
       </div>
     </section>
   </div>

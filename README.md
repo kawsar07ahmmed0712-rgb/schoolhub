@@ -128,7 +128,7 @@ Use this flow to verify the project step-by-step.
 6. Open **Fees (Monthly)** and **My Payments** → confirm due + payment history
 
 ### G) Teacher + Head: daily progress overview
-1. Logout → login as **Teacher**
+1. Logout → login as **Teacher** 
 2. Open **Today's Schedule**
 3. For period 1: set a topic and check **Mark as done** → save
 4. Logout → login as **Head Teacher**
@@ -138,3 +138,6 @@ Use this flow to verify the project step-by-step.
 - “Database not initialized” pages: run `python manage.py init-tables`
 - No student routine: run `python manage.py import-teacher-schedule --csv Database/teacher_schedule.csv`
 - Login fails: re-run `python manage.py import-accounts` / `python manage.py import-students`
+
+
+

@@ -13,26 +13,28 @@
       {% if rows|length == 0 %}
         <p class="muted">No fee plans yet.</p>
       {% else %}
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>Amount</th>
-              <th>Paid</th>
-              <th>Due</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in rows %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
               <tr>
-                <td>{{ r.fee_month }}</td>
-                <td>{{ r.amount }}</td>
-                <td>{{ r.paid_total }}</td>
-                <td><strong>{{ r.due }}</strong></td>
+                <th>Month</th>
+                <th>Amount</th>
+                <th>Paid</th>
+                <th>Due</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.fee_month }}</td>
+                  <td>{{ r.amount }}</td>
+                  <td>{{ r.paid_total }}</td>
+                  <td><strong>{{ r.due }}</strong></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% endif %}
 
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
@@ -42,4 +44,3 @@
     </section>
   </div>
 {% endblock %}
-

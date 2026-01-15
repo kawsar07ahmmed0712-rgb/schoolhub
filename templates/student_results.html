@@ -40,24 +40,26 @@
         <p class="muted">No marks found for you in this exam yet.</p>
       {% else %}
         <h2>Your marks</h2>
-        <table class="table" style="margin-top: 10px;">
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Marks</th>
-              <th>Max</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in result.rows %}
+        <div class="table-wrap" style="margin-top: 10px;">
+          <table class="table">
+            <thead>
               <tr>
-                <td>{{ r.subject }}</td>
-                <td><strong>{{ r.marks_obtained }}</strong></td>
-                <td>{{ r.max_marks }}</td>
+                <th>Subject</th>
+                <th>Marks</th>
+                <th>Max</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for r in result.rows %}
+                <tr>
+                  <td>{{ r.subject }}</td>
+                  <td><strong>{{ r.marks_obtained }}</strong></td>
+                  <td>{{ r.max_marks }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         <div class="alert" style="margin-top: 12px;">
           <strong>Total:</strong> {{ result.total }} / {{ result.max_total }}
         </div>
@@ -69,4 +71,3 @@
     </section>
   </div>
 {% endblock %}
-

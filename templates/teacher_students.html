@@ -26,28 +26,29 @@
 
     <section class="card card-pad">
       {% if students %}
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Roll</th>
-              <th>Name</th>
-              <th>Phone</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in students %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
               <tr>
-                <td>{{ s.roll }}</td>
-                <td>{{ s.name }}</td>
-                <td>{{ s.phone }}</td>
+                <th>Roll</th>
+                <th>Name</th>
+                <th>Phone</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for s in students %}
+                <tr>
+                  <td>{{ s.roll }}</td>
+                  <td>{{ s.name }}</td>
+                  <td>{{ s.phone }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% else %}
         <p class="muted">{{ message or "No students found." }}</p>
       {% endif %}
     </section>
   </div>
 {% endblock %}
-

@@ -39,7 +39,7 @@
       {% if not days or not periods %}
         <p class="muted">{{ message or "No timetable found." }}</p>
       {% else %}
-        <div style="overflow:auto;">
+        <div class="table-wrap">
           <table class="table">
             <thead>
               <tr>
@@ -77,4 +77,3 @@
     </section>
   </div>
 {% endblock %}
-

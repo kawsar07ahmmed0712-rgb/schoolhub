@@ -22,38 +22,40 @@
         </div>
 
         {% if students %}
-          <table class="table" style="margin-top: 10px;">
-            <thead>
-              <tr>
-                <th>Roll</th>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Present?</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for s in students %}
-                {% set st = status_map.get(s.student_id) %}
+          <div class="table-wrap" style="margin-top: 10px;">
+            <table class="table">
+              <thead>
                 <tr>
-                  <td>{{ s.roll }}</td>
-                  <td>{{ s.name }}</td>
-                  <td>{{ s.phone }}</td>
-                  <td>
-                    <label style="display:inline-flex; align-items:center; gap:10px; margin:0;">
-                      <input
-                        type="checkbox"
-                        name="present_ids"
-                        value="{{ s.student_id }}"
-                        {% if st != 'absent' %}checked{% endif %}
-                        style="width: 18px; height: 18px;"
-                      />
-                      <span class="muted">Present</span>
-                    </label>
-                  </td>
+                  <th>Roll</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Present?</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {% for s in students %}
+                  {% set st = status_map.get(s.student_id) %}
+                  <tr>
+                    <td>{{ s.roll }}</td>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.phone }}</td>
+                    <td>
+                      <label style="display:inline-flex; align-items:center; gap:10px; margin:0;">
+                        <input
+                          type="checkbox"
+                          name="present_ids"
+                          value="{{ s.student_id }}"
+                          {% if st != 'absent' %}checked{% endif %}
+                          style="width: 18px; height: 18px;"
+                        />
+                        <span class="muted">Present</span>
+                      </label>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         {% else %}
           <p class="muted">No students found for this class/section.</p>
         {% endif %}
@@ -61,4 +63,3 @@
     </section>
   </div>
 {% endblock %}
-

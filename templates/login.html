@@ -2,31 +2,75 @@
 {% extends "_base.html" %}
 
 {% block content %}
-  <div class="content-inner" style="max-width: 720px;">
-    <div class="card card-pad">
-      <h1>Login</h1>
-      <p class="muted">Role: <span class="badge">{{ role }}</span></p>
+  <div class="auth">
+    <div class="auth-grid">
+      <section class="card card-pad">
+        <h1 class="auth-title">Login</h1>
+        <p class="muted">Role: <span class="badge">{{ role }}</span></p>
 
-      {% if message %}
-        <div class="alert">{{ message }}</div>
-      {% endif %}
+        {% if message %}
+          <div class="alert">{{ message }}</div>
+        {% endif %}
 
-      <form method="post" action="/login" class="form-row" style="margin-top: 12px;">
-        <div>
-          <label for="phone">Phone</label>
-          <input id="phone" name="phone" type="text" value="{{ phone or '' }}" autocomplete="username" />
+        <form method="post" action="/login" class="form-row" style="margin-top: 12px;">
+          <div>
+            <label for="phone">Phone</label>
+            <input
+              id="phone"
+              name="phone"
+              type="text"
+              value="{{ phone or '' }}"
+              autocomplete="username"
+              inputmode="numeric"
+              placeholder="e.g. 017xxxxxxxx"
+            />
+          </div>
+
+          <div>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 6px;">
+            <button class="btn btn-primary" type="submit">Sign in</button>
+            <a class="btn btn-ghost" href="{{ url_for('home') }}">Change role</a>
+          </div>
+        </form>
+      </section>
+
+      <aside class="auth-aside">
+        <h2 style="margin:0 0 10px;">What happens next?</h2>
+        <p class="muted" style="margin:0;">After signing in, you’ll land on your dashboard with tools based on your role.</p>
+
+        <ul class="feature-list" style="margin-top: 14px;">
+          <li class="feature-item">
+            <span class="feature-ico" aria-hidden="true"></span>
+            <div>
+              <strong>Students</strong>
+              <div class="muted">Fees, payments, attendance, routine, results.</div>
+            </div>
+          </li>
+          <li class="feature-item">
+            <span class="feature-ico" aria-hidden="true"></span>
+            <div>
+              <strong>Teachers</strong>
+              <div class="muted">Attendance, students, marks, schedules, notices.</div>
+            </div>
+          </li>
+          <li class="feature-item">
+            <span class="feature-ico" aria-hidden="true"></span>
+            <div>
+              <strong>Admin & Head</strong>
+              <div class="muted">Payments, setup, oversight, approvals and reports.</div>
+            </div>
+          </li>
+        </ul>
+
+        <div class="auth-hint">
+          <span class="muted">Need demo accounts?</span>
+          <a class="btn btn-ghost" href="{{ url_for('home') }}">See roles</a>
         </div>
-
-        <div>
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" />
-        </div>
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 6px;">
-          <button class="btn btn-primary" type="submit">Sign in</button>
-          <a class="btn btn-ghost" href="{{ url_for('home') }}">Change role</a>
-        </div>
-      </form>
+      </aside>
     </div>
   </div>
 {% endblock %}

@@ -88,10 +88,23 @@
     <section class="card card-pad">
       <h2>Menu</h2>
       <p class="muted">Everything available for your role.</p>
-      <div class="grid grid-3" style="margin-top: 12px;">
+
+      <div class="grid grid-2" style="margin-top: 12px;">
+        <div>
+          <label for="menu-search">Search menu</label>
+          <input id="menu-search" type="text" placeholder="Type to filter…" data-menu-search />
+        </div>
+        <div style="display:flex; align-items:flex-end; justify-content:flex-end;">
+          <div class="muted" style="font-size: 13px;">
+            Showing <strong><span data-menu-count>0</span></strong> items
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-3" style="margin-top: 12px;" data-menu-grid>
         {% for slug, label in pages %}
           {% set href = (nav_links.get(slug) if nav_links is defined else None) or url_for('dashboard_page', role=role_, page=slug) %}
-          <a class="card card-pad menu-tile" href="{{ href }}" style="text-decoration:none; box-shadow:none;">
+          <a class="card card-pad menu-tile" href="{{ href }}" style="text-decoration:none; box-shadow:none;" data-menu-item data-menu-text="{{ label }} {{ slug }}">
             <div style="display:flex; justify-content: space-between; align-items: center; gap: 10px;">
               <div>
                 <div style="font-weight: 760;">{{ label }}</div>
