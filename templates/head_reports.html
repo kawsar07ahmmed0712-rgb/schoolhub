@@ -39,6 +39,27 @@
     </section>
 
     <section class="card card-pad">
+      <h2>Gemini head brief</h2>
+      <p class="muted">Ask Gemini to turn the stats into short action items.</p>
+      <form method="post" action="{{ url_for('head_reports') }}" class="form-row" style="margin-top: 10px;">
+        <div>
+          <label for="gemini_prompt">Prompt</label>
+          <input id="gemini_prompt" name="gemini_prompt" type="text" value="{{ gemini_prompt or '' }}" placeholder="Example: What should I focus on this week?" />
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" type="submit">Generate brief</button>
+        </div>
+      </form>
+
+      {% if gemini_output %}
+        <div class="ai-result info" style="margin-top: 12px;">
+          <div class="pill">Gemini response</div>
+          <p style="margin-top: 8px; white-space: pre-wrap;">{{ gemini_output }}</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card card-pad">
       <h2>Shortcuts</h2>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
         <a class="btn" href="{{ url_for('head_today_overview') }}">Today's Overview</a>

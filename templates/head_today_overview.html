@@ -5,7 +5,7 @@
   <div class="grid" style="max-width: 1300px;">
     <section class="card card-pad">
       <h1>Today's Teaching Overview</h1>
-      <p class="muted"><strong>Date:</strong> {{ today }} · <strong>Weekday:</strong> {{ weekday }}</p>
+      <p class="muted"><strong>Date:</strong> {{ today }} | <strong>Weekday:</strong> {{ weekday }}</p>
 
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px;">
         <a class="btn btn-ghost" href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, class_no=selected_class_no, section=selected_section, status='pending') }}">Pending</a>
@@ -36,11 +36,11 @@
       <p class="muted">
         <strong>Status:</strong> {{ selected_status|upper }}
         {% if teacher_label %}
-          · <strong>Teacher:</strong> {{ teacher_label }}
+         | <strong>Teacher:</strong> {{ teacher_label }}
           <a href="{{ url_for('head_today_overview', class_no=selected_class_no, section=selected_section, status=selected_status) }}">(clear)</a>
         {% endif %}
         {% if selected_class_no or selected_section %}
-          · <strong>Class:</strong> {{ selected_class_no or 'All' }}
+         | <strong>Class:</strong> {{ selected_class_no or 'All' }}
           <strong>Section:</strong> {{ selected_section or 'All' }}
           <a href="{{ url_for('head_today_overview', teacher_id=selected_teacher_id, status=selected_status) }}">(clear)</a>
         {% endif %}

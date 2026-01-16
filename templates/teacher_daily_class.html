@@ -5,8 +5,8 @@
   <div class="grid" style="max-width: 1200px;">
     <section class="card card-pad">
       <h1>Daily Class Update</h1>
-      <p class="muted"><strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
-      <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }}</p>
+      <p class="muted"><strong>Date:</strong> {{ date }} | <strong>Weekday:</strong> {{ weekday|upper }}</p>
+      <p class="muted"><strong>Class:</strong> {{ class_no }} | <strong>Section:</strong> {{ section }}</p>
 
       <form method="get" action="{{ url_for('teacher_daily_class') }}" class="form-row" style="margin-top: 12px;">
         <div class="grid grid-2">
@@ -23,8 +23,46 @@
     </section>
 
     <section class="card card-pad">
-      <h2>Update periods (1–6)</h2>
-      <p class="muted">Fill topic/homework/notes and save per period.</p>
+      <div class="form-head">
+        <div>
+          <h2>Update periods (1-6)</h2>
+          <p class="muted">Fill topic/homework/notes and save per period.</p>
+        </div>
+      </div>
+
+      <div class="card card-pad" style="box-shadow:none; margin-top: 10px;">
+        <h3>Gemini class assistant</h3>
+        <p class="muted">Generate a quick Topic/Homework/Notes draft for today's classes.</p>
+        <form method="post" action="{{ url_for('teacher_daily_class') }}" class="form-row" style="margin-top: 10px;">
+          <input type="hidden" name="action" value="gemini_daily" />
+          <input type="hidden" name="log_date" value="{{ date }}" />
+          <div>
+            <label for="gemini_prompt">Prompt</label>
+            <input id="gemini_prompt" name="gemini_prompt" type="text" value="{{ gemini_prompt or '' }}" placeholder="Example: Period 2 math - linear equations, short homework" />
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-ghost" type="submit">Generate</button>
+          </div>
+        </form>
+
+        {% if gemini_output %}
+          <div class="ai-result info" style="margin-top: 12px;">
+            <div class="pill">Gemini draft</div>
+            {% if gemini_output.topic %}
+              <p><strong>Topic:</strong> {{ gemini_output.topic }}</p>
+            {% endif %}
+            {% if gemini_output.homework %}
+              <p><strong>Homework:</strong> {{ gemini_output.homework }}</p>
+            {% endif %}
+            {% if gemini_output.notes %}
+              <p><strong>Notes:</strong> {{ gemini_output.notes }}</p>
+            {% endif %}
+            {% if not gemini_output.topic and not gemini_output.homework and not gemini_output.notes %}
+              <p class="muted">{{ gemini_output.raw }}</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
 
       <div class="grid" style="margin-top: 12px;">
         {% for p in periods %}
@@ -39,7 +77,7 @@
               <input type="hidden" name="log_date" value="{{ date }}" />
 
               <div class="muted" style="font-size: 12px; margin-top: -2px;">
-                Scheduled teacher: <strong>{{ p.teacher_name }}</strong> · {{ p.teacher_phone }}
+                Scheduled teacher: <strong>{{ p.teacher_name }}</strong> | {{ p.teacher_phone }}
               </div>
 
               <div>

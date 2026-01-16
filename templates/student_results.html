@@ -32,6 +32,14 @@
     </section>
 
     <section class="card card-pad">
+      <h2>Gemini study tips</h2>
+      <p class="muted">Need help improving your scores? Ask the AI tutor for a quick study plan.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
+        <a class="btn btn-ghost" href="{{ url_for('student_ai_assist') }}">Ask Gemini</a>
+      </div>
+    </section>
+
+    <section class="card card-pad">
       {% if not selected_exam_id %}
         <p class="muted">Pick an exam to view your marks.</p>
       {% elif not result.published %}

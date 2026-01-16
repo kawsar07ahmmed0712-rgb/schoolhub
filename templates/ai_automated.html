@@ -69,7 +69,7 @@
             <ul class="clean-list">
               {% for r in buckets.high %}
                 <li>
-                  <strong>{{ r.student_name }}</strong> — {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
+                  <strong>{{ r.student_name }}</strong> - {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
                 </li>
               {% endfor %}
             </ul>
@@ -83,7 +83,7 @@
             <ul class="clean-list">
               {% for r in buckets.medium %}
                 <li>
-                  <strong>{{ r.student_name }}</strong> — {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
+                  <strong>{{ r.student_name }}</strong> - {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
                 </li>
               {% endfor %}
             </ul>
@@ -97,7 +97,7 @@
             <ul class="clean-list">
               {% for r in buckets.good %}
                 <li>
-                  <strong>{{ r.student_name }}</strong> — {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
+                  <strong>{{ r.student_name }}</strong> - {{ (r.confidence*100)|round(1) }}% (by {{ r.submitted_by }})
                 </li>
               {% endfor %}
             </ul>

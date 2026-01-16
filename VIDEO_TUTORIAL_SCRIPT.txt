@@ -9,12 +9,14 @@ It is created with:
 - New AI Insights (dropout risk + score forecasting) powered by bundled Kaggle datasets
 - Gemini Study Assistant for students (Gemini API key in .env)
 - Automated AI workflow for teachers -> head (risk buckets)
+- Teacher AI Risk Sheet (row/column scoring with per-student risk labels)
 
 As we go ahead I will:
 1) Show the full UI (how the website looks and works)
 2) Then I will show the code structure in VS Code
 3) Show the AI Insights page (two ready-to-use ML widgets)
 3.5) Show the student Gemini assistant + automated AI buckets for head
+3.6) Show the Teacher AI Risk Sheet (table with ML columns + inline risk labels)
 4) Finally, explain how you can run it locally using the README roadmap and the new `python manage.py train-ml` command
 
 Unfortunately, I could not deploy it (I tried, but I could not finish deployment yet).
@@ -137,6 +139,11 @@ Teacher Dashboard modules:
      (for the teacher's assigned class/section)
 9) AI Insights
    - Same ML widgets available for teachers to triage risk before parent calls.
+10) AI Risk Sheet
+   - Row/column ML sheet with per-student predictions (risk/good/high risk).
+11) Gemini helpers
+   - Notice draft generator inside Notices
+   - Daily class draft generator inside Daily Class Update
 
 
 ============================================================

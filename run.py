@@ -262,6 +262,7 @@ ROLE_PAGES = {
     ],
     "teacher": [
         ("students", "Student List"),
+        ("ai_sheet", "AI Risk Sheet"),
         ("ai_insights", "AI Insights"),
         ("ai_auto", "Automated AI Insights"),
         ("attendance", "Take Attendance"),
@@ -321,6 +322,7 @@ def build_nav_links(role: str) -> dict:
   elif role == "teacher":
     links.update(
       {
+        "ai_sheet": url_for("teacher_ai_sheet"),
         "ai_insights": url_for("ai_insights", role="teacher"),
         "ai_auto": url_for("ai_auto_insights", role="teacher"),
         "students": url_for("teacher_students", role="teacher"),
@@ -670,6 +672,50 @@ def notice_delete(role, notice_id):
   return redirect(url_for("notices", role=role))
 
 
+@app.post("/dashboard/<role>/notices/gemini")
+def notice_gemini(role):
+  role = normalize_role(role)
+  if session.get("role") != role:
+    return redirect(url_for("login", role=role))
+  if role != "teacher":
+    return redirect(url_for("notices", role=role))
+
+  prompt = (request.form.get("prompt") or "").strip()
+  draft_title = ""
+  draft_body = ""
+  message = None
+
+  if not prompt:
+    message = "Write a short prompt first."
+  else:
+    try:
+      reply = ask_gemini(
+        "Write a short school notice for students and parents. "
+        "Return the title on the first line, then the body on the next lines.\n"
+        f"Topic: {prompt}"
+      )
+      lines = [line.strip() for line in reply.splitlines() if line.strip()]
+      if lines:
+        draft_title = lines[0].replace("Title:", "").strip()[:120]
+        draft_body = "\n".join(lines[1:]).strip()
+      if not draft_body:
+        draft_body = reply.strip()
+    except Exception as exc:
+      message = f"Gemini failed to generate a draft: {exc}"
+
+  return render_template(
+    "notices.html",
+    role=role,
+    phone=session.get("phone"),
+    can_post=True,
+    notices=list_notices(),
+    message=message,
+    title=draft_title,
+    body=draft_body,
+    gemini_prompt=prompt,
+  )
+
+
 
 
 
@@ -851,6 +897,142 @@ def teacher_students(role):
             students=students,
             q=q,
             message=None if students else "No students found.",
+        )
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route("/dashboard/teacher/ai-sheet", methods=["GET", "POST"])
+def teacher_ai_sheet():
+    if session.get("role") != "teacher":
+        return redirect(url_for("login", role="teacher"))
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    predictions = {}
+    values = {}
+    message = None
+
+    def risk_label(raw_label: str) -> str:
+        label = (raw_label or "").lower()
+        if "dropout" in label:
+            return "High risk"
+        if "enrolled" in label or "risk" in label:
+            return "Risk"
+        return "Good"
+
+    try:
+        cursor.execute("SELECT id FROM teachers WHERE user_id=%s", (session.get("user_id"),))
+        t = cursor.fetchone()
+        if not t:
+            return render_template(
+                "teacher_ai_sheet.html",
+                role="teacher",
+                class_no="-",
+                section="-",
+                students=[],
+                fields=DROPOUT_FORM_FIELDS,
+                values={},
+                predictions={},
+                message="Teacher profile not found.",
+            )
+
+        teacher_id = t["id"]
+        cursor.execute(
+            """
+            SELECT class_no, section
+            FROM class_teacher_assignments
+            WHERE teacher_id=%s
+            ORDER BY academic_year DESC, id DESC
+            LIMIT 1
+            """,
+            (teacher_id,),
+        )
+        a = cursor.fetchone()
+        if not a:
+            return render_template(
+                "teacher_ai_sheet.html",
+                role="teacher",
+                class_no="-",
+                section="-",
+                students=[],
+                fields=DROPOUT_FORM_FIELDS,
+                values={},
+                predictions={},
+                message="Class teacher assignment not found.",
+            )
+
+        class_no = int(a["class_no"])
+        section = a["section"]
+        table = class_table_name(class_no, section)
+
+        cursor.execute(
+            f"""
+            SELECT c.roll, s.id AS student_id, s.name, u.phone
+            FROM `{table}` c
+            JOIN students s ON s.id = c.student_id
+            JOIN users u ON u.id = s.user_id
+            ORDER BY c.roll ASC
+            """
+        )
+        students = cursor.fetchall() or []
+
+        if request.method == "POST":
+            values = {k: v for k, v in request.form.items()}
+            action = values.get("action", "")
+            send_to_head = values.get("send_to_head") == "1"
+
+            def run_prediction(student_id: int):
+                features = {}
+                for f in DROPOUT_FORM_FIELDS:
+                    key = f"{f['name']}_{student_id}"
+                    features[f["name"]] = values.get(key)
+                result = predict_dropout(features)
+                predictions[student_id] = {
+                    "label": risk_label(result["label"]),
+                    "raw_label": result["label"],
+                    "confidence": result["confidence"],
+                }
+                if send_to_head:
+                    entry = new_auto_entry(
+                        student_name=next((s["name"] for s in students if int(s["student_id"]) == student_id), "Unknown"),
+                        label=result["label"],
+                        confidence=result["confidence"],
+                        submitted_by=session.get("phone") or "unknown",
+                        role="teacher",
+                        features=result.get("used_features", {}),
+                    )
+                    save_auto_insight(entry)
+
+            if action == "predict_all":
+                any_scored = False
+                for s in students:
+                    sid = int(s["student_id"])
+                    # Only score if at least one field is filled.
+                    if any(values.get(f"{f['name']}_{sid}") for f in DROPOUT_FORM_FIELDS):
+                        run_prediction(sid)
+                        any_scored = True
+                message = "Predictions updated for filled rows." if any_scored else "No filled rows to score."
+            elif action.startswith("predict:"):
+                try:
+                    target_id = int(action.split(":", 1)[1])
+                    run_prediction(target_id)
+                    message = "Prediction updated."
+                except Exception:
+                    message = "Could not score the selected row."
+
+        return render_template(
+            "teacher_ai_sheet.html",
+            role="teacher",
+            class_no=class_no,
+            section=section,
+            students=students,
+            fields=DROPOUT_FORM_FIELDS,
+            values=values,
+            predictions=predictions,
+            message=message,
         )
     finally:
         cursor.close()
@@ -1654,6 +1836,9 @@ def teacher_daily_class():
 
     raw_date = (request.form.get("log_date") if request.method == "POST" else request.args.get("date")) or ""
     raw_date = raw_date.strip()
+    gemini_output = None
+    gemini_prompt = ""
+
     try:
         selected_date_obj = parse_iso_date(raw_date) if raw_date else date.today()
     except Exception:
@@ -1713,7 +1898,31 @@ def teacher_daily_class():
         except Exception:
             schedule_map = {}
 
-        if request.method == "POST":
+        if request.method == "POST" and request.form.get("action") == "gemini_daily":
+            gemini_prompt = (request.form.get("gemini_prompt") or "").strip()
+            if gemini_prompt:
+                try:
+                    reply = ask_gemini(
+                        "Create a daily class update with Topic, Homework, and Notes. "
+                        "Return three lines starting with 'Topic:', 'Homework:', 'Notes:'. "
+                        f"Class {class_no} section {section}. Prompt: {gemini_prompt}"
+                    )
+                    lines = [line.strip() for line in reply.splitlines() if line.strip()]
+                    parsed = {"topic": "", "homework": "", "notes": "", "raw": reply}
+                    for line in lines:
+                        lower = line.lower()
+                        if lower.startswith("topic"):
+                            parsed["topic"] = line.split(":", 1)[-1].strip()
+                        elif lower.startswith("homework"):
+                            parsed["homework"] = line.split(":", 1)[-1].strip()
+                        elif lower.startswith("notes"):
+                            parsed["notes"] = line.split(":", 1)[-1].strip()
+                    gemini_output = parsed
+                except Exception as exc:
+                    gemini_output = {"topic": "", "homework": "", "notes": "", "raw": f"Gemini error: {exc}"}
+            else:
+                gemini_output = {"topic": "", "homework": "", "notes": "", "raw": "Write a prompt first."}
+        elif request.method == "POST":
             try:
                 period_no = int(request.form.get("period_no", "0"))
             except Exception:
@@ -1807,6 +2016,8 @@ def teacher_daily_class():
             section=section,
             periods=periods,
             message="Saved." if request.args.get("saved") == "1" else None,
+            gemini_output=gemini_output,
+            gemini_prompt=gemini_prompt,
         )
     finally:
         cursor.close()
@@ -2394,7 +2605,7 @@ def head_results():
     )
 
 
-@app.get("/dashboard/head/reports")
+@app.route("/dashboard/head/reports", methods=["GET", "POST"])
 def head_reports():
     if session.get("role") != "head":
         return redirect(url_for("login", role="head"))
@@ -2402,6 +2613,8 @@ def head_reports():
     today = str(date.today())
     conn = connect_db()
     cursor = conn.cursor(dictionary=True)
+    gemini_output = None
+    gemini_prompt = ""
     try:
         cursor.execute("SELECT COUNT(*) AS c FROM teacher_lesson_logs WHERE log_date=%s", (today,))
         today_logs_total = int((cursor.fetchone() or {}).get("c") or 0)
@@ -2420,6 +2633,25 @@ def head_reports():
         cursor.execute("SELECT COUNT(*) AS c FROM exam_publications WHERE is_published=1")
         publications_published = int((cursor.fetchone() or {}).get("c") or 0)
 
+        if request.method == "POST":
+            gemini_prompt = (request.form.get("gemini_prompt") or "").strip()
+            if gemini_prompt:
+                try:
+                    summary_context = (
+                        f"Today logs total: {today_logs_total}, done: {today_logs_done}. "
+                        f"Attendance sessions: {attendance_sessions_total}. "
+                        f"Pending leaves: {leaves_pending}. Exams: {exams_total}. "
+                        f"Published results: {publications_published}."
+                    )
+                    gemini_output = ask_gemini(
+                        "You are advising a head teacher. Provide 2-4 short, actionable bullet points. "
+                        f"Context: {summary_context}\nQuestion: {gemini_prompt}"
+                    )
+                except Exception as exc:
+                    gemini_output = f"Gemini error: {exc}"
+            else:
+                gemini_output = "Write a short prompt first."
+
         return render_template(
             "head_reports.html",
             stats={
@@ -2431,6 +2663,8 @@ def head_reports():
                 "publications_published": publications_published,
             },
             message=request.args.get("msg"),
+            gemini_prompt=gemini_prompt,
+            gemini_output=gemini_output,
         )
     except Exception:
         app.logger.exception("head_reports failed")

@@ -6,7 +6,7 @@
     <section class="card card-pad">
       <h1>Class Diary (Head)</h1>
       <p class="muted">Review daily diary updates by class teacher.</p>
-      <p class="muted"><strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
+      <p class="muted"><strong>Date:</strong> {{ date }} | <strong>Weekday:</strong> {{ weekday|upper }}</p>
 
       <form method="get" action="{{ url_for('head_daily_class') }}" class="form-row" style="margin-top: 12px;">
         <div class="grid grid-3">
@@ -47,8 +47,8 @@
         {% if class_teacher %}
           <p class="muted">
             <strong>{{ class_teacher.teacher_name }}</strong>
-            · {{ class_teacher.teacher_phone }}
-            · <span class="badge">{{ class_teacher.teacher_code }}</span>
+           | {{ class_teacher.teacher_phone }}
+           | <span class="badge">{{ class_teacher.teacher_code }}</span>
           </p>
         {% else %}
           <p class="muted">No class teacher assignment found for this class/year.</p>
@@ -56,7 +56,7 @@
       </section>
 
       <section class="card card-pad">
-        <h2>Periods (1–6)</h2>
+        <h2>Periods (1-6)</h2>
         <p class="muted">Shows the diary as entered by the class teacher for this date.</p>
 
         {% if periods %}
@@ -69,7 +69,7 @@
                 </div>
 
                 <div class="muted" style="font-size: 12px; margin-top: 6px;">
-                  Scheduled teacher: <strong>{{ p.teacher_name }}</strong> · {{ p.teacher_phone }}
+                  Scheduled teacher: <strong>{{ p.teacher_name }}</strong> | {{ p.teacher_phone }}
                 </div>
 
                 {% if p.has_update %}

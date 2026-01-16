@@ -122,6 +122,21 @@ body {
   }
 }
 
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-in {
+  animation: fade-up 650ms var(--ease-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bg::before,
   .bg::after {
@@ -598,6 +613,17 @@ textarea {
   background: transparent;
 }
 
+.ai-sheet-table th,
+.ai-sheet-table td {
+  white-space: nowrap;
+}
+
+.ai-sheet-table input {
+  min-width: 110px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
 .hero {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -625,7 +651,7 @@ textarea {
 .role-grid {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 14px;
 }
 
@@ -634,9 +660,10 @@ textarea {
   text-decoration: none;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  padding: 18px 18px;
-  background: rgba(255, 255, 255, 0.06);
-  min-height: 140px;
+  padding: 20px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  min-height: 170px;
+  box-shadow: var(--shadow-1);
   transition: transform 180ms var(--ease-out), background 180ms var(--ease-out), border-color 180ms var(--ease-out);
 }
 
@@ -661,6 +688,10 @@ textarea {
   color: var(--muted);
 }
 
+.role-card:hover .role-card-sub {
+  color: var(--text);
+}
+
 .feature-list {
   list-style: none;
   padding: 0;
@@ -678,6 +709,12 @@ textarea {
   border-radius: 14px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.06);
+  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease-out);
+}
+
+.feature-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 245, 255, 0.25);
 }
 
 .feature-ico {

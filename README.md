@@ -7,6 +7,7 @@ Learning project using **Python + Flask + MySQL**.
 - AI Insights (new): `/dashboard/<role>/ai-insights`
 - Automated AI (teacher/head): `/dashboard/<role>/ai-automated`
 - Student Gemini tutor: `/dashboard/student/ai-assist`
+- Teacher AI Risk Sheet: `/dashboard/teacher/ai-sheet`
 
 ## Prerequisites
 - Python 3.10+
@@ -128,7 +129,18 @@ Use this flow to verify the project step-by-step.
 ### E) Student AI tutor (Gemini)
 1. Login as **Student**
 2. Open **AI Study Assistant**
-3. Ask short, specific questions; answers come from Gemini with 2–4 sentence tips
+3. Ask short, specific questions; answers come from Gemini with 2-4 sentence tips
+
+### F) Teacher AI Risk Sheet (bulk scoring)
+1. Login as **Teacher** -> open **AI Risk Sheet**
+2. Fill the ML columns per student row
+3. Click **Predict** (per row) or **Predict all filled rows**
+4. Risk labels appear inline and are also pushed to the Head's automated bucket list
+
+### G) Gemini helpers in real pages
+- Teacher **Notices**: Gemini draft helper above the notice form
+- Teacher **Daily Class Update**: Gemini Topic/Homework/Notes generator
+- Head **Reports**: Gemini brief generator from the live stats
 
 ### C) Student: confirm the notice is visible
 1. Logout

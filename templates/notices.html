@@ -12,6 +12,22 @@
     </section>
 
     {% if can_post %}
+      {% if role == "teacher" %}
+        <section class="card card-pad">
+          <h2>Gemini notice draft</h2>
+          <p class="muted">Describe the notice in one line and let Gemini draft the title/body.</p>
+          <form method="post" action="{{ url_for('notice_gemini', role=role) }}" class="form-row" style="margin-top: 10px;">
+            <div>
+              <label for="prompt">Draft prompt</label>
+              <input id="prompt" name="prompt" type="text" value="{{ gemini_prompt or '' }}" placeholder="Example: Parent meeting on Thursday at 3 PM" />
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-ghost" type="submit">Generate draft</button>
+            </div>
+          </form>
+        </section>
+      {% endif %}
+
       <section class="card card-pad">
         <h2>Post a notice</h2>
         <form method="post" action="{{ url_for('notices_post', role=role) }}" class="form-row" style="margin-top: 10px;">
@@ -45,7 +61,7 @@
                 <div>
                   <div style="font-weight: 760; font-size: 16px;">{{ n.title }}</div>
                   <div class="muted" style="font-size: 12px; margin-top: 4px;">
-                    By {{ n.by_role }} ({{ n.by_phone }}) · {{ n.created_at }}
+                    By {{ n.by_role }} ({{ n.by_phone }}) | {{ n.created_at }}
                   </div>
                 </div>
                 {% if can_post %}

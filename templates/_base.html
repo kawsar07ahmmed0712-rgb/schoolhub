@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      {% if page_title %}{{ page_title }} · {% endif %}{{ app_name or "SchoolHub" }}
+      {% if page_title %}{{ page_title }} | {% endif %}{{ app_name or "SchoolHub" }}
     </title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
     <script defer src="{{ url_for('static', filename='app.js') }}"></script>
@@ -124,6 +124,11 @@
                           <path d="M2.5 21a5.5 5.5 0 0 1 9 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                           <path d="M12.5 21a5.5 5.5 0 0 1 9 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".8" />
                         </svg>
+                      {% elif slug in ['ai_sheet'] %}
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M4 5h16v14H4z" stroke="currentColor" stroke-width="1.8" />
+                          <path d="M4 9h16M8 5v14M12 5v14M16 5v14" stroke="currentColor" stroke-width="1.6" opacity=".85" />
+                        </svg>
                       {% elif slug in ['today_schedule','weekly_schedule','schedule_upload','timetable'] %}
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M7 3v3M17 3v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
@@ -177,8 +182,8 @@
         </div>
         <footer class="footer">
           <div class="footer-inner">
-            <span>{{ app_name or "SchoolHub" }} · {{ (role_|capitalize) if role_ else "Welcome" }}</span>
-            <span class="footer-dot">•</span>
+            <span>{{ app_name or "SchoolHub" }} | {{ (role_|capitalize) if role_ else "Welcome" }}</span>
+            <span class="footer-dot">|</span>
             <span>{{ current_year }}</span>
           </div>
         </footer>

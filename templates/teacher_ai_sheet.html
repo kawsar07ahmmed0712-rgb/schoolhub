@@ -1,0 +1,99 @@
+{% set page_title = "AI Risk Sheet" %}
+{% extends "_base.html" %}
+
+{% block content %}
+  <div class="grid" style="max-width: 1400px;">
+    <section class="card card-pad">
+      <div class="form-head">
+        <div>
+          <p class="kicker">Teacher dashboard</p>
+          <h1>AI Risk Sheet</h1>
+          <p class="muted">Fill the ML columns for each student, then predict risk. Results also feed the Head's automated buckets.</p>
+        </div>
+        <div class="pill">Class {{ class_no }} | Section {{ section }}</div>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <form method="post">
+        <div class="form-actions" style="margin-bottom: 12px;">
+          <button class="btn btn-primary" name="action" value="predict_all" type="submit">Predict all filled rows</button>
+          <label class="muted small" style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" name="send_to_head" value="1" {% if values.get('send_to_head', '1') == '1' %}checked{% endif %} />
+            Send predictions to Head list
+          </label>
+        </div>
+
+        {% if students|length == 0 %}
+          <p class="muted">No students found for this class/section.</p>
+        {% else %}
+          <div class="table-wrap">
+            <table class="table ai-sheet-table">
+              <thead>
+                <tr>
+                  <th>Roll</th>
+                  <th>Student</th>
+                  {% for f in fields %}
+                    <th>{{ f.label }}</th>
+                  {% endfor %}
+                  <th>Risk</th>
+                  <th>Confidence</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in students %}
+                  {% set sid = s.student_id %}
+                  <tr>
+                    <td>{{ s.roll }}</td>
+                    <td>
+                      <div style="font-weight: 700;">{{ s.name }}</div>
+                      <div class="muted small">{{ s.phone }}</div>
+                    </td>
+                    {% for f in fields %}
+                      {% set key = f.name ~ '_' ~ sid %}
+                      <td>
+                        <input
+                          name="{{ key }}"
+                          type="{{ f.type }}"
+                          step="{{ f.step }}"
+                          placeholder="{{ f.hint }}"
+                          value="{{ values.get(key, '') }}"
+                        />
+                      </td>
+                    {% endfor %}
+                    {% set pred = predictions.get(sid) %}
+                    <td>
+                      {% if pred %}
+                        <strong>{{ pred.label }}</strong>
+                        <div class="muted small">{{ pred.raw_label }}</div>
+                      {% else %}
+                        <span class="muted">-</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if pred %}
+                        {{ (pred.confidence * 100)|round(1) }}%
+                      {% else %}
+                        <span class="muted">-</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <button class="btn btn-ghost" name="action" value="predict:{{ sid }}" type="submit">Predict</button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </form>
+    </section>
+  </div>
+{% endblock %}
+
+
+
+
+
+

@@ -6,12 +6,12 @@
     <section class="card card-pad">
       <h1>Daily Diary</h1>
       {% if student_name %}
-        <p class="muted"><strong>Student:</strong> {{ student_name }}{% if roll %} · <strong>Roll:</strong> {{ roll }}{% endif %}</p>
+        <p class="muted"><strong>Student:</strong> {{ student_name }}{% if roll %} | <strong>Roll:</strong> {{ roll }}{% endif %}</p>
       {% endif %}
       {% if class_no and section %}
-        <p class="muted"><strong>Class:</strong> {{ class_no }} · <strong>Section:</strong> {{ section }} · <strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
+        <p class="muted"><strong>Class:</strong> {{ class_no }} | <strong>Section:</strong> {{ section }} | <strong>Date:</strong> {{ date }} | <strong>Weekday:</strong> {{ weekday|upper }}</p>
       {% else %}
-        <p class="muted"><strong>Date:</strong> {{ date }} · <strong>Weekday:</strong> {{ weekday|upper }}</p>
+        <p class="muted"><strong>Date:</strong> {{ date }} | <strong>Weekday:</strong> {{ weekday|upper }}</p>
       {% endif %}
 
       <form method="get" action="{{ url_for('student_daily_class') }}" class="form-row" style="margin-top: 12px;">
@@ -33,14 +33,14 @@
         <h2>Class Teacher</h2>
         <p class="muted">
           <strong>{{ class_teacher.teacher_name }}</strong>
-          · {{ class_teacher.teacher_phone }}
-          · <span class="badge">{{ class_teacher.teacher_code }}</span>
+         | {{ class_teacher.teacher_phone }}
+         | <span class="badge">{{ class_teacher.teacher_code }}</span>
         </p>
       </section>
     {% endif %}
 
     <section class="card card-pad">
-      <h2>Periods (1–6)</h2>
+      <h2>Periods (1-6)</h2>
       <p class="muted">Topic, homework, and notes published by your class teacher.</p>
 
       {% if periods %}
@@ -53,7 +53,7 @@
               </div>
 
               <div class="muted" style="font-size: 12px; margin-top: 6px;">
-                Scheduled teacher: <strong>{{ p.teacher_name }}</strong> · {{ p.teacher_phone }}
+                Scheduled teacher: <strong>{{ p.teacher_name }}</strong> | {{ p.teacher_phone }}
               </div>
 
               {% if p.has_update %}

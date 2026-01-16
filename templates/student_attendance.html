@@ -29,11 +29,19 @@
     </section>
 
     <section class="card card-pad">
+      <h2>Gemini attendance coach</h2>
+      <p class="muted">Ask for tips to stay consistent or plan a catch-up routine.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
+        <a class="btn btn-ghost" href="{{ url_for('student_ai_assist') }}">Ask Gemini</a>
+      </div>
+    </section>
+
+    <section class="card card-pad">
       <h2>Summary</h2>
       <p class="muted">
-        <strong>Total:</strong> {{ summary.total }} ·
-        <strong>Present:</strong> {{ summary.present }} ·
-        <strong>Absent:</strong> {{ summary.absent }} ·
+        <strong>Total:</strong> {{ summary.total }} | 
+        <strong>Present:</strong> {{ summary.present }} | 
+        <strong>Absent:</strong> {{ summary.absent }} | 
         <strong>Present %:</strong> {{ summary.percent }}%
       </p>
 

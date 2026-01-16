@@ -26,7 +26,7 @@
           {% if role_ == 'student' %}
             <p><strong>Name:</strong> {{ profile.name }}</p>
             {% if profile.class_no %}
-              <p class="muted"><strong>Class:</strong> {{ profile.class_no }} · <strong>Section:</strong> {{ profile.section }} · <strong>Roll:</strong> {{ profile.roll }}</p>
+              <p class="muted"><strong>Class:</strong> {{ profile.class_no }} | <strong>Section:</strong> {{ profile.section }} | <strong>Roll:</strong> {{ profile.roll }}</p>
             {% else %}
               <p class="muted">Class info not found in class tables yet.</p>
             {% endif %}
@@ -72,6 +72,7 @@
             <a class="btn" href="{{ url_for('teacher_leaves') }}">Leaves</a>
             <a class="btn" href="{{ url_for('ai_insights', role=role_) }}">AI Insights</a>
             <a class="btn btn-ghost" href="{{ url_for('ai_auto_insights', role=role_) }}">Automated AI</a>
+            <a class="btn btn-ghost" href="{{ url_for('teacher_ai_sheet') }}">AI Risk Sheet</a>
           {% elif role_ == "admin" %}
             <a class="btn" href="{{ url_for('admin_schedule_upload') }}">Upload Schedule</a>
             <a class="btn" href="{{ url_for('admin_payments') }}">Record Payment</a>
@@ -101,7 +102,7 @@
       <div class="grid grid-2" style="margin-top: 12px;">
         <div>
           <label for="menu-search">Search menu</label>
-          <input id="menu-search" type="text" placeholder="Type to filter…" data-menu-search />
+          <input id="menu-search" type="text" placeholder="Type to filter..." data-menu-search />
         </div>
         <div style="display:flex; align-items:flex-end; justify-content:flex-end;">
           <div class="muted" style="font-size: 13px;">

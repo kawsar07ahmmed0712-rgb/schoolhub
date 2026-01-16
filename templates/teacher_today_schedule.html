@@ -5,11 +5,11 @@
   <div class="grid" style="max-width: 1100px;">
     <section class="card card-pad">
       <h1>Today's Schedule</h1>
-      <p class="muted"><strong>Date:</strong> {{ today }} · <strong>Weekday:</strong> {{ weekday }}</p>
+      <p class="muted"><strong>Date:</strong> {{ today }} | <strong>Weekday:</strong> {{ weekday }}</p>
     </section>
 
     <section class="card card-pad">
-      <h2>Periods (1–6)</h2>
+      <h2>Periods (1-6)</h2>
       <div class="grid" style="margin-top: 12px;">
         {% for p in periods %}
           <div class="card card-pad" style="box-shadow:none;">
@@ -17,7 +17,7 @@
               <div>
                 <div style="font-weight: 760;">Period {{ p.period_no }}</div>
                 <div class="muted" style="font-size: 13px;">
-                  Class: <strong>{{ p.class_no }}</strong> · Section: <strong>{{ p.section }}</strong>
+                  Class: <strong>{{ p.class_no }}</strong> | Section: <strong>{{ p.section }}</strong>
                 </div>
               </div>
 
