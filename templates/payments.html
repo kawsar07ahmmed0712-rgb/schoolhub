@@ -6,6 +6,9 @@
     <section class="card card-pad">
       <h1>Record Payment</h1>
       <p class="muted">Admin panel | Logged in as: {{ phone }}</p>
+      {% if message %}
+        <div class="alert">{{ message }}</div>
+      {% endif %}
     </section>
 
     <section class="card card-pad">
@@ -54,6 +57,52 @@
           <a class="btn btn-ghost" href="/dashboard/admin/">Back to Dashboard</a>
         </div>
       </form>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Payment requests</h2>
+      <p class="muted">Approve a request to record the payment instantly.</p>
+      {% if request_rows|length == 0 %}
+        <p class="muted">No pending requests.</p>
+      {% else %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Requested At</th>
+                <th>Student</th>
+                <th>Phone</th>
+                <th>Class</th>
+                <th>Month</th>
+                <th>Amount</th>
+                <th>Note</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in request_rows %}
+                <tr>
+                  <td>{{ r.requested_at }}</td>
+                  <td>{{ r.student_name }}</td>
+                  <td>{{ r.student_phone }}</td>
+                  <td>{{ r.class_no }}{{ r.section }}</td>
+                  <td>{{ r.fee_month }}</td>
+                  <td>{{ r.requested_amount }}</td>
+                  <td>{{ r.note or "-" }}</td>
+                  <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <form method="POST" action="{{ url_for('admin_payment_request_approve', request_id=r.id) }}">
+                      <button class="btn btn-primary" type="submit">Approve & Record</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin_payment_request_reject', request_id=r.id) }}">
+                      <button class="btn btn-ghost" type="submit">Reject</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
     </section>
   </div>
 {% endblock %}

@@ -12,7 +12,7 @@ class GeminiClient:
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY is missing")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
 
     def ask(self, prompt: str, student_name: Optional[str] = None) -> str:
         system = (

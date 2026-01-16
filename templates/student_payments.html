@@ -2,10 +2,33 @@
 {% extends "_base.html" %}
 
 {% block content %}
-  <div class="grid" style="max-width: 1100px;">
+  <div class="grid" style="max-width: 1200px;">
     <section class="card card-pad">
       <h1>My Payments</h1>
       <p class="muted">Logged in as: {{ phone }}</p>
+    </section>
+
+    <section class="grid grid-2">
+      <div class="card card-pad">
+        <h2>Summary</h2>
+        {% set ns = namespace(total=0) %}
+        {% for r in rows %}
+          {% set ns.total = ns.total + ((r.paid_amount or 0) | float) %}
+        {% endfor %}
+        <p class="muted"><strong>Total paid:</strong> {{ ns.total }}</p>
+        {% if rows %}
+          <p class="muted"><strong>Latest payment:</strong> {{ rows[0].paid_at }}</p>
+        {% else %}
+          <p class="muted">No payments yet.</p>
+        {% endif %}
+      </div>
+      <div class="card card-pad">
+        <h2>Need help?</h2>
+        <p class="muted">Ask the AI tutor about budgeting, due dates, or fee planning.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
+          <a class="btn btn-ghost" href="{{ url_for('student_ai_assist') }}">Ask Gemini</a>
+        </div>
+      </div>
     </section>
 
     <section class="card card-pad">

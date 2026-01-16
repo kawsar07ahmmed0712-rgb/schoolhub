@@ -27,6 +27,44 @@ def create_fee_plan(class_no: int, section: str, academic_year: int, fee_month: 
     cur.close()
     conn.close()
 
+def create_fee_plans_for_year(
+  class_no: int,
+  section: str,
+  academic_year: int,
+  amount: int,
+  start_month: int = 1,
+  end_month: int = 12,
+) -> int:
+  if section not in {"A", "B"}:
+    raise ValueError("Invalid section.")
+  if not (1 <= class_no <= 10):
+    raise ValueError("Invalid class.")
+  if not (1 <= start_month <= 12) or not (1 <= end_month <= 12):
+    raise ValueError("Invalid month range.")
+  if start_month > end_month:
+    raise ValueError("Start month must be before end month.")
+  if amount <= 0:
+    raise ValueError("Amount must be positive.")
+
+  months = list(range(start_month, end_month + 1))
+  conn = connect_db()
+  cur = conn.cursor()
+  try:
+    for fee_month in months:
+      cur.execute(
+        """
+        INSERT INTO fee_plans (class_no, section, academic_year, fee_month, amount)
+        VALUES (%s,%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE amount=VALUES(amount)
+        """,
+        (class_no, section, academic_year, fee_month, amount),
+      )
+    conn.commit()
+    return len(months)
+  finally:
+    cur.close()
+    conn.close()
+
 def list_fee_plans_for_class(class_no: int, section: str, academic_year: int):
   conn = connect_db()
   cur = conn.cursor(dictionary=True)
@@ -41,6 +79,25 @@ def list_fee_plans_for_class(class_no: int, section: str, academic_year: int):
       (class_no, section, academic_year),
     )
     return cur.fetchall() or []
+  finally:
+    cur.close()
+    conn.close()
+
+def get_fee_plan_id(class_no: int, section: str, academic_year: int, fee_month: int):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute(
+      """
+      SELECT id
+      FROM fee_plans
+      WHERE class_no=%s AND section=%s AND academic_year=%s AND fee_month=%s
+      LIMIT 1
+      """,
+      (class_no, section, academic_year, fee_month),
+    )
+    row = cur.fetchone()
+    return int(row["id"]) if row else None
   finally:
     cur.close()
     conn.close()
@@ -117,6 +174,158 @@ def get_fee_status_for_student(student_id: int, class_no: int, section: str, aca
 
 
 from typing import Optional, List, Dict
+
+def create_fee_payment_request(
+  student_id: int,
+  class_no: int,
+  section: str,
+  academic_year: int,
+  fee_month: int,
+  requested_amount: int,
+  note: str = "",
+) -> int:
+  if section not in {"A", "B"}:
+    raise ValueError("Invalid section.")
+  if not (1 <= class_no <= 10):
+    raise ValueError("Invalid class.")
+  if not (1 <= fee_month <= 12):
+    raise ValueError("Invalid month.")
+  if requested_amount <= 0:
+    raise ValueError("Amount must be positive.")
+
+  conn = connect_db()
+  cur = conn.cursor()
+  try:
+    cur.execute(
+      """
+      INSERT INTO fee_payment_requests (
+        student_id, class_no, section, academic_year, fee_month, requested_amount, note
+      )
+      VALUES (%s,%s,%s,%s,%s,%s,%s)
+      """,
+      (student_id, class_no, section, academic_year, fee_month, requested_amount, (note or "").strip()[:255]),
+    )
+    conn.commit()
+    return cur.lastrowid
+  finally:
+    cur.close()
+    conn.close()
+
+def list_fee_payment_requests_for_student(student_id: int, limit: int = 200):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute(
+      """
+      SELECT
+        id,
+        class_no,
+        section,
+        academic_year,
+        fee_month,
+        requested_amount,
+        status,
+        DATE_FORMAT(requested_at, '%Y-%m-%d %H:%i') AS requested_at,
+        DATE_FORMAT(decided_at, '%Y-%m-%d %H:%i') AS decided_at,
+        note
+      FROM fee_payment_requests
+      WHERE student_id=%s
+      ORDER BY requested_at DESC, id DESC
+      LIMIT %s
+      """,
+      (student_id, limit),
+    )
+    return cur.fetchall() or []
+  finally:
+    cur.close()
+    conn.close()
+
+def list_fee_payment_requests_admin(status: Optional[str] = None, limit: int = 200):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    sql = """
+      SELECT
+        r.id,
+        r.class_no,
+        r.section,
+        r.academic_year,
+        r.fee_month,
+        r.requested_amount,
+        r.status,
+        DATE_FORMAT(r.requested_at, '%Y-%m-%d %H:%i') AS requested_at,
+        r.note,
+        s.name AS student_name,
+        u.phone AS student_phone
+      FROM fee_payment_requests r
+      JOIN students s ON s.id = r.student_id
+      JOIN users u ON u.id = s.user_id
+      WHERE 1=1
+    """
+    params = []
+    if status in {"pending", "approved", "rejected"}:
+      sql += " AND r.status=%s"
+      params.append(status)
+    sql += " ORDER BY r.requested_at DESC, r.id DESC LIMIT %s"
+    params.append(limit)
+    cur.execute(sql, tuple(params))
+    return cur.fetchall() or []
+  finally:
+    cur.close()
+    conn.close()
+
+def get_fee_payment_request(request_id: int):
+  conn = connect_db()
+  cur = conn.cursor(dictionary=True)
+  try:
+    cur.execute(
+      """
+      SELECT
+        r.id,
+        r.student_id,
+        r.class_no,
+        r.section,
+        r.academic_year,
+        r.fee_month,
+        r.requested_amount,
+        r.status,
+        r.note,
+        DATE_FORMAT(r.requested_at, '%Y-%m-%d %H:%i') AS requested_at,
+        DATE_FORMAT(r.decided_at, '%Y-%m-%d %H:%i') AS decided_at,
+        u.phone AS student_phone,
+        s.name AS student_name
+      FROM fee_payment_requests r
+      JOIN students s ON s.id = r.student_id
+      JOIN users u ON u.id = s.user_id
+      WHERE r.id=%s
+      """,
+      (request_id,),
+    )
+    return cur.fetchone()
+  finally:
+    cur.close()
+    conn.close()
+
+def update_fee_payment_request_status(request_id: int, status: str, decided_by_user_id: int) -> bool:
+  if status not in {"approved", "rejected"}:
+    raise ValueError("Invalid status.")
+
+  conn = connect_db()
+  cur = conn.cursor()
+  try:
+    cur.execute(
+      """
+      UPDATE fee_payment_requests
+      SET status=%s, decided_by_user_id=%s, decided_at=NOW()
+      WHERE id=%s
+      """,
+      (status, decided_by_user_id, request_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+  finally:
+    cur.close()
+    conn.close()
 
 def list_payments_admin(
   limit: int = 200,

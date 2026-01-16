@@ -173,6 +173,30 @@ def main():
       """
     )
 
+    cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS fee_payment_requests (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        class_no TINYINT NOT NULL,
+        section ENUM('A','B') NOT NULL,
+        academic_year INT NOT NULL,
+        fee_month TINYINT NOT NULL,
+        requested_amount INT NOT NULL,
+        note VARCHAR(255) NULL,
+        status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+        requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        decided_by_user_id INT NULL,
+        decided_at TIMESTAMP NULL,
+        INDEX idx_student (student_id),
+        INDEX idx_status (status),
+        INDEX idx_plan (class_no, section, academic_year, fee_month),
+        CONSTRAINT fk_fee_req_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+        CONSTRAINT fk_fee_req_decider FOREIGN KEY (decided_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      """
+    )
+
     # Results / marks
     cursor.execute(
         """

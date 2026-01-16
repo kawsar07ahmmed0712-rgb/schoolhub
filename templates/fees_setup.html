@@ -2,46 +2,100 @@
 {% extends "_base.html" %}
 
 {% block content %}
-  <div class="grid" style="max-width: 900px;">
+  <div class="grid" style="max-width: 1100px;">
     <section class="card card-pad">
       <h1>Fees Setup</h1>
       <p class="muted">Admin panel | Logged in as: {{ phone }}</p>
+      {% if message %}
+        <div class="alert">{{ message }}</div>
+      {% endif %}
     </section>
 
-    <section class="card card-pad">
-      <form method="POST" class="form-row">
-        <div class="grid grid-2">
-          <div>
-            <label>Class No</label>
-            <input name="class_no" inputmode="numeric" />
+    <section class="grid grid-2">
+      <div class="card card-pad">
+        <h2>Single Month Plan</h2>
+        <form method="POST" class="form-row">
+          <input type="hidden" name="action" value="single" />
+          <div class="grid grid-2">
+            <div>
+              <label>Class No</label>
+              <input name="class_no" inputmode="numeric" />
+            </div>
+            <div>
+              <label>Section (A/B)</label>
+              <input name="section" value="A" />
+            </div>
           </div>
-          <div>
-            <label>Section (A/B)</label>
-            <input name="section" value="A" />
-          </div>
-        </div>
 
-        <div class="grid grid-2">
-          <div>
-            <label>Academic Year</label>
-            <input name="academic_year" value="{{ academic_year or 2026 }}" inputmode="numeric" />
+          <div class="grid grid-2">
+            <div>
+              <label>Academic Year</label>
+              <input name="academic_year" value="{{ academic_year or 2026 }}" inputmode="numeric" />
+            </div>
+            <div>
+              <label>Month (1-12)</label>
+              <input name="fee_month" inputmode="numeric" />
+            </div>
           </div>
+
           <div>
-            <label>Month (1-12)</label>
-            <input name="fee_month" inputmode="numeric" />
+            <label>Amount</label>
+            <input name="amount" inputmode="numeric" />
           </div>
-        </div>
 
-        <div>
-          <label>Amount</label>
-          <input name="amount" inputmode="numeric" />
-        </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="submit">Save Fee Plan</button>
+          </div>
+        </form>
+      </div>
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-primary" type="submit">Save Fee Plan</button>
-          <a class="btn btn-ghost" href="/dashboard/admin/">Back to Dashboard</a>
-        </div>
-      </form>
+      <div class="card card-pad">
+        <h2>Publish Full Year</h2>
+        <p class="muted">Creates or updates fee plans for all months in one action.</p>
+        <form method="POST" class="form-row">
+          <input type="hidden" name="action" value="yearly" />
+          <div class="grid grid-2">
+            <div>
+              <label>Class No</label>
+              <input name="class_no" inputmode="numeric" />
+            </div>
+            <div>
+              <label>Section (A/B)</label>
+              <input name="section" value="A" />
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div>
+              <label>Academic Year</label>
+              <input name="academic_year" value="{{ academic_year or 2026 }}" inputmode="numeric" />
+            </div>
+            <div>
+              <label>Monthly Amount</label>
+              <input name="amount" inputmode="numeric" />
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div>
+              <label>Start Month</label>
+              <input name="start_month" value="1" inputmode="numeric" />
+            </div>
+            <div>
+              <label>End Month</label>
+              <input name="end_month" value="12" inputmode="numeric" />
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="submit">Publish Year Plan</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section>
+      <a class="btn btn-ghost" href="/dashboard/admin/">Back to Dashboard</a>
     </section>
   </div>
 {% endblock %}

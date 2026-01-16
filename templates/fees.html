@@ -7,6 +7,15 @@
       <h1>Fees (Monthly)</h1>
       <p class="muted">Academic year: <strong>{{ academic_year }}</strong></p>
       <p class="muted">Logged in as: {{ phone }}</p>
+      {% if message %}
+        <div class="alert">{{ message }}</div>
+      {% endif %}
+      {% if overdue_months %}
+        <div class="alert alert-risk">
+          <strong>Risk notice:</strong> Fees overdue for months {{ overdue_months | join(', ') }}.
+          Total due: <strong>{{ overdue_total }}</strong>.
+        </div>
+      {% endif %}
     </section>
 
     <section class="card card-pad">
@@ -41,6 +50,74 @@
         <a class="btn btn-primary" href="/dashboard/student/">Back to Dashboard</a>
         <a class="btn btn-ghost" href="{{ url_for('student_payments_history') }}">My Payments</a>
       </div>
+    </section>
+
+    <section class="card card-pad">
+      <h2>Request a payment</h2>
+      <p class="muted">Submit a payment request to the admin. You can request a future month as an advance.</p>
+      {% if available_months|length == 0 %}
+        <p class="muted">No fee plans available yet. Ask the admin to publish the fee plan first.</p>
+      {% else %}
+        <form method="POST" action="{{ url_for('student_fee_request') }}" class="form-row">
+          <div class="grid grid-2">
+            <div>
+              <label>Month</label>
+              <select name="fee_month">
+                {% for m in available_months %}
+                  <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label>Amount</label>
+              <input name="requested_amount" inputmode="numeric" />
+            </div>
+          </div>
+          <div>
+            <label>Note (optional)</label>
+            <input name="note" />
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="submit">Send Request</button>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+
+    <section class="card card-pad">
+      <h2>My payment requests</h2>
+      {% if request_rows|length == 0 %}
+        <p class="muted">No payment requests yet.</p>
+      {% else %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Requested At</th>
+                <th>Month</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Decided At</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in request_rows %}
+                <tr>
+                  <td>{{ r.requested_at }}</td>
+                  <td>{{ r.fee_month }}</td>
+                  <td>{{ r.requested_amount }}</td>
+                  <td>
+                    <span class="status-pill status-{{ r.status }}">{{ r.status|capitalize }}</span>
+                  </td>
+                  <td>{{ r.decided_at or "-" }}</td>
+                  <td>{{ r.note or "-" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
     </section>
   </div>
 {% endblock %}
