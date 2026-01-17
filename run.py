@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response
 from datetime import date, timedelta, datetime
+import calendar
 from werkzeug.security import check_password_hash
 from db import connect_db
 import os
@@ -70,6 +71,17 @@ from services.ml_service import (
 
 
 app = Flask(__name__)
+
+
+@app.template_filter("month_name")
+def month_name_filter(value):
+  try:
+    month_num = int(value)
+  except (TypeError, ValueError):
+    return value or ""
+  if 1 <= month_num <= 12:
+    return calendar.month_name[month_num]
+  return str(value)
 
 
 
@@ -3797,13 +3809,14 @@ def admin_payment_receipt(payment_id):
   return render_template("payment_receipt.html", role="admin", phone=session.get("phone"), receipt=receipt)
 
 
-
-
-
 @app.get("/logout")
 def logout():
     session.clear()
     return redirect(url_for("home"))
+
+
+
+
 
 if __name__ == "__main__":
     debug = os.getenv("FLASK_DEBUG", "0").strip() == "1"

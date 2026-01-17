@@ -21,7 +21,7 @@
               {% endif %}
               <tr><th>Class</th><td>{{ receipt.class_no }}-{{ receipt.section }}</td></tr>
               <tr><th>Academic Year</th><td>{{ receipt.academic_year }}</td></tr>
-              <tr><th>Fee Month</th><td>{{ receipt.fee_month }}</td></tr>
+              <tr><th>Fee Month</th><td>{{ receipt.fee_month|month_name }}</td></tr>
               <tr><th>Plan Amount</th><td>{{ receipt.plan_amount }}</td></tr>
               <tr><th>Paid Amount</th><td><strong>{{ receipt.paid_amount }}</strong></td></tr>
               <tr><th>Paid At</th><td>{{ receipt.paid_at }}</td></tr>

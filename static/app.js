@@ -22,9 +22,8 @@
   if (saved === "light" || saved === "dark") {
     applyTheme(saved);
   } else {
-    // Default: prefer light for SchoolHub; respect OS dark preference if set.
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    applyTheme(prefersDark ? "dark" : "light");
+    // Default: dark to match the new visual direction; users can toggle.
+    applyTheme("dark");
   }
 
   document.addEventListener("click", (e) => {
@@ -75,6 +74,27 @@
     };
 
     menuSearch.addEventListener("input", update);
+    update();
+  }
+
+  const sheetSearch = document.querySelector("[data-sheet-search]");
+  if (sheetSearch) {
+    const rows = Array.from(document.querySelectorAll("[data-sheet-row]"));
+    const countEl = document.querySelector("[data-sheet-count]");
+
+    const update = () => {
+      const q = (sheetSearch.value || "").trim().toLowerCase();
+      let shown = 0;
+      for (const row of rows) {
+        const text = (row.getAttribute("data-sheet-text") || row.textContent || "").toLowerCase();
+        const visible = !q || text.includes(q);
+        row.style.display = visible ? "" : "none";
+        if (visible) shown += 1;
+      }
+      if (countEl) countEl.textContent = String(shown);
+    };
+
+    sheetSearch.addEventListener("input", update);
     update();
   }
 })();

@@ -1,0 +1,71 @@
+[
+  {
+    "student_name": "Tashfi Jin Barua",
+    "label": "Dropout",
+    "confidence": 0.7687559689930504,
+    "submitted_by": "01761857073",
+    "submitted_role": "teacher",
+    "submitted_at": "2026-01-17T04:18:59.290862Z",
+    "features": {
+      "Admission grade": 0.0,
+      "Age at enrollment": 0.0,
+      "Curricular units 1st sem (enrolled)": 0.0,
+      "Curricular units 1st sem (approved)": 0.0,
+      "Curricular units 1st sem (grade)": 0.0,
+      "Curricular units 2nd sem (enrolled)": 0.0,
+      "Curricular units 2nd sem (approved)": 0.0,
+      "Curricular units 2nd sem (grade)": 0.0,
+      "Tuition fees up to date": 0.0,
+      "Scholarship holder": 0.0,
+      "Debtor": 0.0,
+      "International": 0.0,
+      "Gender": 0.0
+    }
+  },
+  {
+    "student_name": "Sakina Fae Sanyal",
+    "label": "Graduate",
+    "confidence": 0.9327538745621491,
+    "submitted_by": "01761857073",
+    "submitted_role": "teacher",
+    "submitted_at": "2026-01-17T16:46:04.484545Z",
+    "features": {
+      "Admission grade": 170.0,
+      "Age at enrollment": 18.0,
+      "Curricular units 1st sem (enrolled)": 6.0,
+      "Curricular units 1st sem (approved)": 7.0,
+      "Curricular units 1st sem (grade)": 16.0,
+      "Curricular units 2nd sem (enrolled)": 6.0,
+      "Curricular units 2nd sem (approved)": 6.0,
+      "Curricular units 2nd sem (grade)": 15.0,
+      "Tuition fees up to date": 1.0,
+      "Scholarship holder": 1.0,
+      "Debtor": 1.0,
+      "International": 0.0,
+      "Gender": 1.0
+    }
+  },
+  {
+    "student_name": "Faiyaz Kai Azad",
+    "label": "Graduate",
+    "confidence": 0.9337488706720274,
+    "submitted_by": "01761857073",
+    "submitted_role": "teacher",
+    "submitted_at": "2026-01-17T16:46:52.783684Z",
+    "features": {
+      "Admission grade": 180.0,
+      "Age at enrollment": 18.0,
+      "Curricular units 1st sem (enrolled)": 7.0,
+      "Curricular units 1st sem (approved)": 7.0,
+      "Curricular units 1st sem (grade)": 17.0,
+      "Curricular units 2nd sem (enrolled)": 7.0,
+      "Curricular units 2nd sem (approved)": 7.0,
+      "Curricular units 2nd sem (grade)": 17.0,
+      "Tuition fees up to date": 1.0,
+      "Scholarship holder": 1.0,
+      "Debtor": 1.0,
+      "International": 1.0,
+      "Gender": 1.0
+    }
+  }
+]

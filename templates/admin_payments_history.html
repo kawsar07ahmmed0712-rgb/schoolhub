@@ -70,7 +70,7 @@
                   <td>{{ r.student_phone }}</td>
                   <td>{{ r.class_no }}-{{ r.section }}</td>
                   <td>{{ r.academic_year }}</td>
-                  <td>{{ r.fee_month }}</td>
+                  <td>{{ r.fee_month|month_name }}</td>
                   <td><strong>{{ r.paid_amount }}</strong></td>
                   <td>{{ r.received_by_phone }}</td>
                   <td><a class="btn btn-ghost" href="/dashboard/admin/payments/{{ r.id }}">View</a></td>

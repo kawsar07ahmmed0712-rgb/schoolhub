@@ -17,7 +17,7 @@
     {% set is_logged_in = (session_role is not none) %}
     {% set nav_pages_ = (pages if (pages is defined and pages) else (role_pages.get(role_, []) if role_ else [])) %}
 
-    <div class="app-shell" data-theme="light">
+    <div class="app-shell" data-theme="dark">
       <div class="bg" aria-hidden="true"></div>
       <header class="topbar">
         <a class="brand" href="{{ url_for('home') }}">

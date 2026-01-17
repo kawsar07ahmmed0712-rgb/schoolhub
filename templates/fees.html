@@ -12,7 +12,7 @@
       {% endif %}
       {% if overdue_months %}
         <div class="alert alert-risk">
-          <strong>Risk notice:</strong> Fees overdue for months {{ overdue_months | join(', ') }}.
+          <strong>Risk notice:</strong> Fees overdue for months {{ overdue_months | map('month_name') | join(', ') }}.
           Total due: <strong>{{ overdue_total }}</strong>.
         </div>
       {% endif %}
@@ -35,7 +35,7 @@
             <tbody>
               {% for r in rows %}
                 <tr>
-                  <td>{{ r.fee_month }}</td>
+                  <td>{{ r.fee_month|month_name }}</td>
                   <td>{{ r.amount }}</td>
                   <td>{{ r.paid_total }}</td>
                   <td><strong>{{ r.due }}</strong></td>
@@ -64,7 +64,7 @@
               <label>Month</label>
               <select name="fee_month">
                 {% for m in available_months %}
-                  <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ m }}</option>
+                  <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ m|month_name }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -105,7 +105,7 @@
               {% for r in request_rows %}
                 <tr>
                   <td>{{ r.requested_at }}</td>
-                  <td>{{ r.fee_month }}</td>
+                  <td>{{ r.fee_month|month_name }}</td>
                   <td>{{ r.requested_amount }}</td>
                   <td>
                     <span class="status-pill status-{{ r.status }}">{{ r.status|capitalize }}</span>

@@ -86,7 +86,7 @@
                   <td>{{ r.student_name }}</td>
                   <td>{{ r.student_phone }}</td>
                   <td>{{ r.class_no }}{{ r.section }}</td>
-                  <td>{{ r.fee_month }}</td>
+                  <td>{{ r.fee_month|month_name }}</td>
                   <td>{{ r.requested_amount }}</td>
                   <td>{{ r.note or "-" }}</td>
                   <td style="display:flex; gap:8px; flex-wrap:wrap;">

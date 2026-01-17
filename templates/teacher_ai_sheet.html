@@ -2,118 +2,144 @@
 {% extends "_base.html" %}
 
 {% block content %}
-  <div class="grid" style="max-width: 1400px;">
-    <section class="card card-pad">
-      <div class="form-head">
-        <div>
-          <p class="kicker">Teacher dashboard</p>
-          <h1>AI Risk Sheet</h1>
-          <p class="muted">Fill the ML columns for each student, then predict risk. Results also feed the Head's automated buckets.</p>
-        </div>
+  <div class="sheet-page">
+    <section class="card card-pad sheet-hero">
+      <div>
+        <p class="kicker">Teacher ML sheet</p>
+        <h1>AI Risk Sheet</h1>
+        <p class="muted">Fill the ML columns for each student, then predict risk. Results also feed the Head's automated buckets.</p>
+      </div>
+      <div class="sheet-hero-meta">
         <div class="pill">Class {{ class_no }} | Section {{ section }}</div>
+        <div class="muted small">Update columns, then predict per student or run all filled rows.</div>
       </div>
     </section>
 
-    <section class="card card-pad">
-      <form method="post">
-        <div class="form-actions" style="margin-bottom: 12px;">
-          <button class="btn btn-primary" name="action" value="predict_all" type="submit">
-            <span class="icon-inline" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M4 12h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                <path d="M14 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </span>
-            Predict all filled rows
-          </button>
-          <label class="muted small" style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" name="send_to_head" value="1" {% if values.get('send_to_head', '1') == '1' %}checked{% endif %} />
-            Send predictions to Head list
-          </label>
-        </div>
-        <p class="muted small">Legend: High risk = Dropout, Risk = Enrolled, Good = Graduate.</p>
-
-        {% if students|length == 0 %}
-          <p class="muted">No students found for this class/section.</p>
-        {% else %}
-          <div class="table-wrap">
-            <table class="table ai-sheet-table">
-              <thead>
-                <tr>
-                  <th>Roll</th>
-                  <th>Student</th>
-                  {% for f in fields %}
-                    <th>{{ f.label }}</th>
-                  {% endfor %}
-                  <th>Risk</th>
-                  <th>Confidence</th>
-                  <th>Predict</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for s in students %}
-                  {% set sid = s.student_id %}
-                  <tr>
-                    <td>{{ s.roll }}</td>
-                    <td>
-                      <div style="font-weight: 700;">{{ s.name }}</div>
-                      <div class="muted small">{{ s.phone }}</div>
-                    </td>
-                    {% for f in fields %}
-                      {% set key = f.name ~ '_' ~ sid %}
-                      <td>
-                        <input
-                          name="{{ key }}"
-                          type="{{ f.type }}"
-                          step="{{ f.step }}"
-                          placeholder="{{ f.hint }}"
-                          value="{{ values.get(key, '') }}"
-                        />
-                      </td>
-                    {% endfor %}
-                    {% set pred = predictions.get(sid) %}
-                    <td>
-                      {% if pred %}
-                        {% set label_lower = pred.label|lower %}
-                        {% if "high" in label_lower %}
-                          {% set risk_class = "risk-pill risk-high" %}
-                        {% elif "risk" in label_lower %}
-                          {% set risk_class = "risk-pill risk-mid" %}
-                        {% else %}
-                          {% set risk_class = "risk-pill risk-good" %}
-                        {% endif %}
-                        <span class="{{ risk_class }}">{{ pred.label }}</span>
-                        <div class="muted small">{{ pred.raw_label }}</div>
-                      {% else %}
-                        <span class="muted">-</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if pred %}
-                        {{ (pred.confidence * 100)|round(1) }}%
-                      {% else %}
-                        <span class="muted">-</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      <button class="btn btn-ghost" name="action" value="predict:{{ sid }}" type="submit">
-                        <span class="icon-inline" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" fill="none">
-                            <path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                            <path d="M13 7l6 5-6 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                          </svg>
-                        </span>
-                        Predict
-                      </button>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+    <div class="sheet-layout">
+      <aside class="card card-pad sheet-sidebar">
+        <div>
+          <div class="sheet-block-title">Search</div>
+          <input class="sheet-search-input" type="text" placeholder="Type to filter students..." data-sheet-search />
+          <div class="muted small sheet-count">
+            Showing <span data-sheet-count>{{ students|length }}</span> of {{ students|length }} students
           </div>
-        {% endif %}
-      </form>
-    </section>
+        </div>
+
+        <div>
+          <div class="sheet-block-title">Legend</div>
+          <div class="sheet-legend">
+            <span class="risk-pill risk-high">High risk</span>
+            <span class="risk-pill risk-mid">Risk</span>
+            <span class="risk-pill risk-good">Good</span>
+          </div>
+          <p class="muted small">High risk = Dropout. Risk = Enrolled. Good = Graduate.</p>
+        </div>
+
+        <div>
+          <div class="sheet-block-title">Quick notes</div>
+          <p class="muted small">Fill numeric inputs, then click Predict or run all filled rows from the top action.</p>
+        </div>
+      </aside>
+
+      <section class="card card-pad sheet-main">
+        <form method="post">
+          <div class="form-actions sheet-actions">
+            <button class="btn btn-primary" name="action" value="predict_all" type="submit">
+              <span class="icon-inline" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  <path d="M14 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              Predict all filled rows
+            </button>
+            <label class="muted small" style="display:flex; align-items:center; gap:8px;">
+              <input type="checkbox" name="send_to_head" value="1" {% if values.get('send_to_head', '1') == '1' %}checked{% endif %} />
+              Send predictions to Head list
+            </label>
+          </div>
+
+          {% if students|length == 0 %}
+            <p class="muted">No students found for this class/section.</p>
+          {% else %}
+            <div class="table-wrap">
+              <table class="table ai-sheet-table">
+                <thead>
+                  <tr>
+                    <th>Roll</th>
+                    <th>Student</th>
+                    {% for f in fields %}
+                      <th>{{ f.label }}</th>
+                    {% endfor %}
+                    <th>Risk</th>
+                    <th>Confidence</th>
+                    <th>Predict</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in students %}
+                    {% set sid = s.student_id %}
+                    <tr data-sheet-row data-sheet-text="{{ s.roll }} {{ s.name }} {{ s.phone }}">
+                      <td>{{ s.roll }}</td>
+                      <td class="student-cell">
+                        <div class="student-name">{{ s.name }}</div>
+                        <div class="muted small">{{ s.phone }}</div>
+                      </td>
+                      {% for f in fields %}
+                        {% set key = f.name ~ '_' ~ sid %}
+                        <td>
+                          <input
+                            name="{{ key }}"
+                            type="{{ f.type }}"
+                            step="{{ f.step }}"
+                            placeholder="{{ f.hint }}"
+                            value="{{ values.get(key, '') }}"
+                          />
+                        </td>
+                      {% endfor %}
+                      {% set pred = predictions.get(sid) %}
+                      <td>
+                        {% if pred %}
+                          {% set label_lower = pred.label|lower %}
+                          {% if "high" in label_lower %}
+                            {% set risk_class = "risk-pill risk-high" %}
+                          {% elif "risk" in label_lower %}
+                            {% set risk_class = "risk-pill risk-mid" %}
+                          {% else %}
+                            {% set risk_class = "risk-pill risk-good" %}
+                          {% endif %}
+                          <span class="{{ risk_class }}">{{ pred.label }}</span>
+                          <div class="muted small">{{ pred.raw_label }}</div>
+                        {% else %}
+                          <span class="muted">-</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if pred %}
+                          {{ (pred.confidence * 100)|round(1) }}%
+                        {% else %}
+                          <span class="muted">-</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <button class="btn btn-ghost" name="action" value="predict:{{ sid }}" type="submit">
+                          <span class="icon-inline" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                              <path d="M13 7l6 5-6 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                          </span>
+                          Predict
+                        </button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </form>
+      </section>
+    </div>
   </div>
 {% endblock %}
-
